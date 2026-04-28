@@ -11,9 +11,6 @@ const AppError = require("./utils/AppError");
 const logger = require("./utils/logger");
 
 // Root Route
-app.get("/", (req, res) => {
-  res.send("Backend is live 🚀");
-});
 
 // ── Route imports ──────────────────────────────────────────────────────────
 const authRoutes = require("./routes/auth.routes");
@@ -87,7 +84,10 @@ app.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
-
+//Root Route added
+app.get("/", (req, res) => {
+  res.send("Backend is live 🚀");
+});
 // ── API routes ─────────────────────────────────────────────────────────────
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);

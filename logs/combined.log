@@ -1,0 +1,220 @@
+2026-04-28 13:20:05 [info]: Connected to MongoDB for seeding
+2026-04-28 13:20:06 [info]: Super Admin created: superadmin@company.com
+2026-04-28 13:20:15 [info]: MongoDB connected: ac-57nl7ua-shard-00-01.vpbf2qu.mongodb.net
+2026-04-28 13:20:15 [info]: Server running in development mode on port 5000
+2026-04-28 13:20:58 [error]: TokenExpiredError: jwt expired
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:190:21
+    at getSecret (/Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:101:10)
+    at exports.protect (/Users/apple/Downloads/employee-onboarding/backend/middlewares/auth.middleware.js:21:25)
+    at Layer.handle [as handle_request] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:328:13)
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:175:3)
+2026-04-28 13:20:58 [error]: TokenExpiredError: jwt expired
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:190:21
+    at getSecret (/Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:101:10)
+    at exports.protect (/Users/apple/Downloads/employee-onboarding/backend/middlewares/auth.middleware.js:21:25)
+    at Layer.handle [as handle_request] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:328:13)
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:175:3)
+2026-04-28 13:20:59 [error]: TokenExpiredError: jwt expired
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:190:21
+    at getSecret (/Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:101:10)
+    at exports.protect (/Users/apple/Downloads/employee-onboarding/backend/middlewares/auth.middleware.js:21:25)
+    at Layer.handle [as handle_request] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:328:13)
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:175:3)
+2026-04-28 13:20:59 [error]: TokenExpiredError: jwt expired
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:190:21
+    at getSecret (/Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:101:10)
+    at exports.protect (/Users/apple/Downloads/employee-onboarding/backend/middlewares/auth.middleware.js:21:25)
+    at Layer.handle [as handle_request] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:328:13)
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:175:3)
+2026-04-28 13:21:01 [error]: TokenExpiredError: jwt expired
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:190:21
+    at getSecret (/Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:101:10)
+    at exports.protect (/Users/apple/Downloads/employee-onboarding/backend/middlewares/auth.middleware.js:21:25)
+    at Layer.handle [as handle_request] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:328:13)
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:175:3)
+2026-04-28 13:21:01 [error]: TokenExpiredError: jwt expired
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:190:21
+    at getSecret (/Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/jsonwebtoken/verify.js:101:10)
+    at exports.protect (/Users/apple/Downloads/employee-onboarding/backend/middlewares/auth.middleware.js:21:25)
+    at Layer.handle [as handle_request] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:328:13)
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:175:3)
+2026-04-28 13:22:11 [info]: Email sent to dev.iamselva@gmail.com: Welcome to Your Company Name — Your Login Credentials
+2026-04-28 13:24:30 [info]: Email sent to iamsathiya2009@gmail.com: Welcome to Your Company Name — Your Login Credentials
+2026-04-28 13:30:24 [error]: Error: Aadhaar, PAN, and Passbook are required before submitting.
+    at EmployeeProfileService.submitSection (/Users/apple/Downloads/employee-onboarding/backend/services/employee.service.js:149:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /Users/apple/Downloads/employee-onboarding/backend/controllers/employee.controller.js:73:19
+2026-04-28 13:30:30 [error]: UNHANDLED REJECTION: Error - Unknown API key 
+2026-04-28 13:36:18 [error]: Seed failed: querySrv EREFUSED _mongodb._tcp.bitbyte.vpbf2qu.mongodb.net
+2026-04-28 13:36:53 [info]: Connected to MongoDB for seeding
+2026-04-28 13:36:54 [error]: Seed failed: E11000 duplicate key error collection: test.users index: email_1 dup key: { email: "superadmin@company.com" }
+2026-04-28 13:37:42 [info]: Connected to MongoDB for seeding
+2026-04-28 13:37:43 [error]: Seed failed: E11000 duplicate key error collection: test.users index: email_1 dup key: { email: "superadmin@company.com" }
+2026-04-28 13:40:36 [info]: Connected to MongoDB for seeding
+2026-04-28 13:40:40 [error]: Seed failed: E11000 duplicate key error collection: test.users index: email_1 dup key: { email: "superadmin@company.com" }
+2026-04-28 13:42:20 [info]: Connected to MongoDB for seeding
+2026-04-28 13:42:21 [error]: Seed failed: E11000 duplicate key error collection: test.users index: email_1 dup key: { email: "superadmin@company.com" }
+2026-04-28 13:42:39 [info]: MongoDB connected: ac-57nl7ua-shard-00-01.vpbf2qu.mongodb.net
+2026-04-28 13:42:39 [info]: Server running in development mode on port 5000
+2026-04-28 13:42:47 [error]: Error: Aadhaar, PAN, and Passbook are required before submitting.
+    at EmployeeProfileService.submitSection (/Users/apple/Downloads/employee-onboarding/backend/services/employee.service.js:149:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /Users/apple/Downloads/employee-onboarding/backend/controllers/employee.controller.js:73:19
+2026-04-28 13:45:12 [info]: MongoDB connected: ac-57nl7ua-shard-00-01.vpbf2qu.mongodb.net
+2026-04-28 13:45:12 [info]: Server running in development mode on port 5000
+2026-04-28 13:45:22 [error]: Error: Aadhaar, PAN, and Passbook are required before submitting.
+    at EmployeeProfileService.submitSection (/Users/apple/Downloads/employee-onboarding/backend/services/employee.service.js:149:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /Users/apple/Downloads/employee-onboarding/backend/controllers/employee.controller.js:73:19
+2026-04-28 13:47:04 [info]: MongoDB connected: ac-57nl7ua-shard-00-02.vpbf2qu.mongodb.net
+2026-04-28 13:47:04 [info]: Server running in development mode on port 5000
+2026-04-28 13:47:09 [error]: Error: Aadhaar, PAN, and Passbook are required before submitting.
+    at EmployeeProfileService.submitSection (/Users/apple/Downloads/employee-onboarding/backend/services/employee.service.js:181:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /Users/apple/Downloads/employee-onboarding/backend/controllers/employee.controller.js:73:19
+2026-04-28 13:49:26 [info]: MongoDB connected: ac-57nl7ua-shard-00-01.vpbf2qu.mongodb.net
+2026-04-28 13:49:26 [info]: Server running in development mode on port 5000
+2026-04-28 13:49:31 [error]: Error: Aadhaar, PAN, and Passbook are required before submitting.
+    at EmployeeProfileService.submitSection (/Users/apple/Downloads/employee-onboarding/backend/services/employee.service.js:187:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /Users/apple/Downloads/employee-onboarding/backend/controllers/employee.controller.js:73:19
+2026-04-28 13:53:19 [info]: MongoDB connected: ac-57nl7ua-shard-00-02.vpbf2qu.mongodb.net
+2026-04-28 13:53:19 [info]: Server running in development mode on port 5000
+2026-04-28 13:55:22 [error]: UNHANDLED REJECTION: Error - Invalid cloud_name bitbyte
+2026-04-28 13:59:05 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-04-28 13:59:05 [info]: Server running in development mode on port 5000
+2026-04-28 13:59:16 [error]: UNHANDLED REJECTION: Error - Invalid cloud_name bitbyte-tech
+2026-04-28 14:01:16 [info]: MongoDB connected: ac-57nl7ua-shard-00-01.vpbf2qu.mongodb.net
+2026-04-28 14:01:16 [info]: Server running in development mode on port 5000
+2026-04-28 14:01:25 [info]: MongoDB connected: ac-57nl7ua-shard-00-01.vpbf2qu.mongodb.net
+2026-04-28 14:01:25 [info]: Server running in development mode on port 5000
+2026-04-28 14:02:05 [error]: Error: Invalid Cloudinary cloud name. Use the exact cloud name from Cloudinary settings; it can contain only letters, numbers, and underscores.
+    at ensureCloudinaryConfigured (/Users/apple/Downloads/employee-onboarding/backend/config/cloudinary.js:25:17)
+    at Layer.handle [as handle_request] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:280:10)
+    at exports.checkFirstLogin (/Users/apple/Downloads/employee-onboarding/backend/middlewares/auth.middleware.js:60:3)
+    at Layer.handle [as handle_request] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/layer.js:95:5)
+2026-04-28 14:02:10 [error]: Error: Invalid Cloudinary cloud name. Use the exact cloud name from Cloudinary settings; it can contain only letters, numbers, and underscores.
+    at ensureCloudinaryConfigured (/Users/apple/Downloads/employee-onboarding/backend/config/cloudinary.js:25:17)
+    at Layer.handle [as handle_request] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/index.js:280:10)
+    at exports.checkFirstLogin (/Users/apple/Downloads/employee-onboarding/backend/middlewares/auth.middleware.js:60:3)
+    at Layer.handle [as handle_request] (/Users/apple/Downloads/employee-onboarding/backend/node_modules/express/lib/router/layer.js:95:5)
+2026-04-28 14:07:29 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-04-28 14:07:29 [info]: Server running in development mode on port 5000
+2026-04-28 14:07:36 [info]: MongoDB connected: ac-57nl7ua-shard-00-02.vpbf2qu.mongodb.net
+2026-04-28 14:07:36 [info]: Server running in development mode on port 5000
+2026-04-28 14:07:56 [error]: UNHANDLED REJECTION: Error - Invalid cloud_name bitbyte-tech
+2026-04-28 14:07:56 [error]: UNHANDLED REJECTION: Error - Invalid cloud_name bitbyte-tech
+2026-04-28 14:07:56 [error]: UNHANDLED REJECTION: Error - Invalid cloud_name bitbyte-tech
+2026-04-28 14:07:56 [error]: Error: Cloudinary rejected the configured cloud name. Check CLOUDINARY_CLOUD_NAME in backend/.env against your Cloudinary dashboard.
+    at /Users/apple/Downloads/employee-onboarding/backend/routes/employee.routes.js:24:17
+    at done (/Users/apple/Downloads/employee-onboarding/backend/node_modules/multer/lib/make-middleware.js:47:7)
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/multer/lib/make-middleware.js:67:11
+    at removeUploadedFiles (/Users/apple/Downloads/employee-onboarding/backend/node_modules/multer/lib/remove-uploaded-files.js:5:28)
+    at Counter.<anonymous> (/Users/apple/Downloads/employee-onboarding/backend/node_modules/multer/lib/make-middleware.js:63:9)
+    at Object.onceWrapper (node:events:638:28)
+    at Counter.emit (node:events:524:28)
+    at Counter.decrement (/Users/apple/Downloads/employee-onboarding/backend/node_modules/multer/lib/counter.js:15:32)
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/multer/lib/make-middleware.js:148:27
+    at CloudinaryStorage.<anonymous> (/Users/apple/Downloads/employee-onboarding/backend/node_modules/multer-storage-cloudinary/lib/index.js:115:25)
+2026-04-28 14:11:00 [info]: MongoDB connected: ac-57nl7ua-shard-00-02.vpbf2qu.mongodb.net
+2026-04-28 14:11:00 [info]: Server running in development mode on port 5000
+2026-04-28 14:11:13 [error]: UNHANDLED REJECTION: Error - Invalid cloud_name example
+2026-04-28 14:11:13 [error]: UNHANDLED REJECTION: Error - Invalid cloud_name example
+2026-04-28 14:11:13 [error]: UNHANDLED REJECTION: Error - Invalid cloud_name example
+2026-04-28 14:11:13 [error]: Error: Cloudinary rejected the configured cloud name. Check CLOUDINARY_CLOUD_NAME in backend/.env against your Cloudinary dashboard.
+    at /Users/apple/Downloads/employee-onboarding/backend/routes/employee.routes.js:24:17
+    at done (/Users/apple/Downloads/employee-onboarding/backend/node_modules/multer/lib/make-middleware.js:47:7)
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/multer/lib/make-middleware.js:67:11
+    at removeUploadedFiles (/Users/apple/Downloads/employee-onboarding/backend/node_modules/multer/lib/remove-uploaded-files.js:5:28)
+    at Counter.<anonymous> (/Users/apple/Downloads/employee-onboarding/backend/node_modules/multer/lib/make-middleware.js:63:9)
+    at Object.onceWrapper (node:events:638:28)
+    at Counter.emit (node:events:524:28)
+    at Counter.decrement (/Users/apple/Downloads/employee-onboarding/backend/node_modules/multer/lib/counter.js:15:32)
+    at /Users/apple/Downloads/employee-onboarding/backend/node_modules/multer/lib/make-middleware.js:148:27
+    at CloudinaryStorage.<anonymous> (/Users/apple/Downloads/employee-onboarding/backend/node_modules/multer-storage-cloudinary/lib/index.js:115:25)
+2026-04-28 14:12:49 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-04-28 14:12:49 [info]: Server running in development mode on port 5000
+2026-04-28 14:15:00 [info]: Email sent to iamsathiya2009@gmail.com: Onboarding Update — Documents ✅ Approved
+2026-04-28 14:17:55 [info]: MongoDB connected: ac-57nl7ua-shard-00-02.vpbf2qu.mongodb.net
+2026-04-28 14:17:55 [info]: Server running in development mode on port 5000
+2026-04-28 14:18:27 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-04-28 14:18:27 [info]: Server running in development mode on port 5000
+2026-04-28 14:21:11 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-04-28 14:21:11 [info]: Server running in development mode on port 5000
+2026-04-28 14:27:42 [info]: Email sent to roshinigovindaraj2206@gmail.com: Welcome to Your Company Name — Your Login Credentials
+2026-04-28 14:50:30 [info]: Email sent to roshinigovindaraj2206@gmail.com: Onboarding Update — Personal ✅ Approved
+2026-04-28 14:50:34 [info]: Email sent to roshinigovindaraj2206@gmail.com: Onboarding Update — Education ✅ Approved
+2026-04-28 14:50:38 [info]: Email sent to roshinigovindaraj2206@gmail.com: Onboarding Update — Bank ✅ Approved
+2026-04-28 14:50:59 [error]: Error: Section must be in submitted/under_review state. Current: pending
+    at AdminService.verifySection (/Users/apple/Downloads/employee-onboarding/backend/services/admin.service.js:174:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async AdminService.verifyDocument (/Users/apple/Downloads/employee-onboarding/backend/services/admin.service.js:240:7)
+    at async /Users/apple/Downloads/employee-onboarding/backend/controllers/admin.controller.js:28:21
+2026-04-28 14:51:16 [error]: Error: Section must be in submitted/under_review state. Current: pending
+    at AdminService.verifySection (/Users/apple/Downloads/employee-onboarding/backend/services/admin.service.js:174:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async AdminService.verifyDocument (/Users/apple/Downloads/employee-onboarding/backend/services/admin.service.js:240:7)
+    at async /Users/apple/Downloads/employee-onboarding/backend/controllers/admin.controller.js:28:21
+2026-04-28 14:56:22 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-04-28 14:56:22 [info]: Server running in development mode on port 5000
+2026-04-28 14:58:01 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-04-28 14:58:01 [info]: Server running in development mode on port 5000
+2026-04-28 15:00:35 [info]: Email sent to roshinigovindaraj2206@gmail.com: Onboarding Update — Documents ✅ Approved
+2026-04-28 15:06:58 [info]: MongoDB connected: ac-57nl7ua-shard-00-02.vpbf2qu.mongodb.net
+2026-04-28 15:06:58 [info]: Server running in development mode on port 5000
+2026-04-28 15:47:04 [error]: MongoDB connection failed: Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/
+2026-04-28 15:48:10 [info]: MongoDB connected: ac-57nl7ua-shard-00-02.vpbf2qu.mongodb.net
+2026-04-28 15:48:10 [info]: Server running in development mode on port 5000
+2026-04-28 15:52:45 [info]: MongoDB connected: ac-57nl7ua-shard-00-01.vpbf2qu.mongodb.net
+2026-04-28 15:52:45 [info]: Server running in development mode on port 5000
+2026-04-28 15:56:04 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-04-28 15:56:04 [info]: Server running in development mode on port 5000
+2026-04-28 15:58:40 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-04-28 15:58:40 [info]: Server running in development mode on port 5000
+2026-04-28 15:59:06 [info]: MongoDB connected: ac-57nl7ua-shard-00-01.vpbf2qu.mongodb.net
+2026-04-28 15:59:06 [info]: Server running in development mode on port 5000
+2026-04-28 15:59:26 [info]: MongoDB connected: ac-57nl7ua-shard-00-02.vpbf2qu.mongodb.net
+2026-04-28 15:59:26 [info]: Server running in development mode on port 5000
+2026-04-28 16:01:29 [info]: Email sent to roshinigovindaraj2206@gmail.com: Welcome Aboard! Your Employee ID: EMP-2026-0001

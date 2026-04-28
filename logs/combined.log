@@ -224,3 +224,6 @@
 2026-04-28 18:14:44 [info]: MongoDB connected: ac-57nl7ua-shard-00-01.vpbf2qu.mongodb.net
 2026-04-28 18:14:44 [info]: Server running in development mode on port 5000
 2026-04-28 18:33:35 [warn]: MongoDB disconnected. Attempting to reconnect...
+2026-04-28 18:40:15 [info]: MongoDB connected: ac-57nl7ua-shard-00-01.vpbf2qu.mongodb.net
+2026-04-28 18:40:15 [info]: Server running in development mode on port 5000
+2026-04-28 18:40:19 [warn]: MongoDB disconnected. Attempting to reconnect...

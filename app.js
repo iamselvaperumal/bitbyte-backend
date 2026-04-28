@@ -10,6 +10,11 @@ const errorHandler = require("./middlewares/errorHandler");
 const AppError = require("./utils/AppError");
 const logger = require("./utils/logger");
 
+// Root Route
+app.get("/", (req, res) => {
+  res.send("Backend is live 🚀");
+});
+
 // ── Route imports ──────────────────────────────────────────────────────────
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");

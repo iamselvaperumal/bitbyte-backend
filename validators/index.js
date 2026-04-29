@@ -213,8 +213,14 @@ const careerDetailsSchema = Joi.object({
   skills: Joi.array()
     .items(Joi.string().trim())
     .min(1)
+    .max(5)
+    .unique()
     .required()
-    .messages({ 'array.min': 'At least one skill must be selected' }),
+    .messages({ 
+      'array.min': 'At least one skill must be selected',
+      'array.max': 'Maximum 5 skills allowed',
+      'array.unique': 'Duplicate skills are not allowed'
+    }),
 });
 
 const careerDetailsDraftSchema = careerDetailsSchema.fork(

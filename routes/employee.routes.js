@@ -31,16 +31,17 @@ router.use(checkFirstLogin);
 
 // Profile & status
 router.get('/profile',           employeeController.getProfile);
-router.get('/status',            employeeController.getOnboardingStatus);   // FIX: new
+router.get('/status',            employeeController.getOnboardingStatus);
 router.get('/audit-trail',       employeeController.getAuditTrail);
 
-// FIX: Draft endpoints — no validation enforcement
+// Draft endpoints — no validation enforcement
 router.post('/draft/:section',   employeeController.saveDraft);
 router.get('/draft',             employeeController.getDraft);
 
 // Section saves — full validation
 router.put('/personal',  validate(schemas.personalDetails),  employeeController.savePersonalDetails);
 router.put('/education', validate(schemas.educationDetails), employeeController.saveEducationDetails);
+router.put('/career',    validate(schemas.careerDetails),    employeeController.saveCareerDetails);
 router.put('/bank',      validate(schemas.bankDetails),      employeeController.saveBankDetails);
 
 // Document upload

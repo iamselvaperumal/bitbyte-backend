@@ -30,19 +30,6 @@ const mergeSectionData = (saved = {}, draft = {}) => ({
   ...(draft || {}),
 });
 
-const normalizeSectionData = (section, data) => {
-  if (section !== "education") return data;
-  if (typeof data.skills !== "string") return data;
-
-  return {
-    ...data,
-    skills: data.skills
-      .split(",")
-      .map((skill) => skill.trim())
-      .filter(Boolean),
-  };
-};
-
 const requiredSectionPaths = {
   personal: [
     "firstName",
@@ -53,6 +40,7 @@ const requiredSectionPaths = {
     "mobile",
     "aadhaarNumber",
     "panNumber",
+    "address.houseNo",
     "address.street",
     "address.city",
     "address.state",
@@ -61,17 +49,7 @@ const requiredSectionPaths = {
     "emergencyContact.relationship",
     "emergencyContact.mobile",
   ],
-  education: [
-    "educationLevel",
-    "highestDegree",
-    "specialization",
-    "collegeName",
-    "university",
-    "yearOfPassing",
-    "percentage",
-    "expectedCTC",
-    "skills",
-  ],
+  // Education is an array — we check length > 0 separately
   bank: [
     "accountHolderName",
     "accountNumber",
@@ -82,10 +60,46 @@ const requiredSectionPaths = {
 };
 
 const assertSectionDetailsComplete = (section, data) => {
-  const missing = requiredSectionPaths[section].filter(
-    (path) => !hasValue(getPathValue(data, path)),
-  );
+  if (section === "education") {
+    // Education must have at least 1 entry
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      throw new AppError(
+        "Education details are incomplete. At least one education entry is required.",
+        400,
+      );
+    }
+    return;
+  }
 
+  if (section === "career") {
+    if (!data || !data.type) {
+      throw new AppError(
+        "Career details are incomplete. Career type (fresher/experienced) is required.",
+        400,
+      );
+    }
+    if (!data.expectedCTC && data.expectedCTC !== 0) {
+      throw new AppError(
+        "Career details are incomplete. Expected CTC is required.",
+        400,
+      );
+    }
+    if (data.type === "experienced") {
+      const missing = ["companyName", "position"].filter((f) => !hasValue(data[f]));
+      if (missing.length) {
+        throw new AppError(
+          `Career details are incomplete. Missing: ${missing.join(", ")}.`,
+          400,
+        );
+      }
+    }
+    return;
+  }
+
+  const paths = requiredSectionPaths[section];
+  if (!paths) return;
+
+  const missing = paths.filter((path) => !hasValue(getPathValue(data, path)));
   if (missing.length) {
     throw new AppError(
       `${section} details are incomplete. Save all required fields before submitting.`,
@@ -106,7 +120,6 @@ class EmployeeProfileService {
     return { profile, documents };
   }
 
-  // FIX: onboarding status endpoint — prevents re-access after completion
   async getOnboardingStatus(userId) {
     const profile = await EmployeeProfile.findOne({ userId })
       .select(
@@ -122,7 +135,6 @@ class EmployeeProfileService {
     const profile = await EmployeeProfile.findOne({ userId });
     if (!profile) throw new AppError("Profile not found", 404);
 
-    // Store in draftData map so nothing is lost between steps
     profile.draftData = { ...profile.draftData, [section]: data };
     profile.isDraft = true;
     if (profile.overallStatus === "registered") {
@@ -136,7 +148,7 @@ class EmployeeProfileService {
   async getDraft(userId) {
     const profile = await EmployeeProfile.findOne({ userId })
       .select(
-        "draftData isDraft personalDetails educationDetails bankDetails verificationStatus overallStatus",
+        "draftData isDraft personalDetails educationDetails careerDetails bankDetails verificationStatus overallStatus",
       )
       .lean();
     if (!profile) throw new AppError("Profile not found", 404);
@@ -148,6 +160,10 @@ class EmployeeProfileService {
     const profile = await EmployeeProfile.findOne({ userId });
     if (!profile) throw new AppError("Profile not found", 404);
     assertSectionEditable(profile, "personal");
+
+    // Uppercase PAN before storing
+    if (data.panNumber) data.panNumber = data.panNumber.toUpperCase();
+
     profile.personalDetails = {
       ...(profile.personalDetails.toObject?.() || profile.personalDetails),
       ...data,
@@ -159,14 +175,39 @@ class EmployeeProfileService {
     return profile;
   }
 
-  // ── Save Education Details ────────────────────────────────────────────
+  // ── Save Education Details (array) ────────────────────────────────────
   async saveEducationDetails(userId, data) {
     const profile = await EmployeeProfile.findOne({ userId });
     if (!profile) throw new AppError("Profile not found", 404);
     assertSectionEditable(profile, "education");
-    profile.educationDetails = {
-      ...(profile.educationDetails.toObject?.() || profile.educationDetails),
-      ...normalizeSectionData("education", data),
+
+    // data.education is an array of education entries
+    const educationArray = Array.isArray(data.education)
+      ? data.education
+      : Array.isArray(data)
+        ? data
+        : [];
+
+    profile.educationDetails = educationArray;
+    await profile.save();
+    return profile;
+  }
+
+  // ── Save Career Details ───────────────────────────────────────────────
+  async saveCareerDetails(userId, data) {
+    const profile = await EmployeeProfile.findOne({ userId });
+    if (!profile) throw new AppError("Profile not found", 404);
+
+    // If fresher, strip experience fields to prevent data injection
+    if (data.type === "fresher") {
+      delete data.companyName;
+      delete data.position;
+      delete data.previousCTC;
+    }
+
+    profile.careerDetails = {
+      ...(profile.careerDetails?.toObject?.() || profile.careerDetails || {}),
+      ...data,
     };
     await profile.save();
     return profile;
@@ -177,6 +218,10 @@ class EmployeeProfileService {
     const profile = await EmployeeProfile.findOne({ userId });
     if (!profile) throw new AppError("Profile not found", 404);
     assertSectionEditable(profile, "bank");
+
+    // Uppercase IFSC before storing
+    if (data.ifscCode) data.ifscCode = data.ifscCode.toUpperCase();
+
     profile.bankDetails = {
       ...(profile.bankDetails.toObject?.() || profile.bankDetails),
       ...data,
@@ -217,7 +262,6 @@ class EmployeeProfileService {
         sizeBytes: file.size,
         uploadedAt: new Date(),
       };
-      // Reset verification status when a doc is re-uploaded
       const statusKey = `${field}Status`;
       if (docRecord[statusKey]) {
         docRecord[statusKey].status = "pending";
@@ -225,13 +269,12 @@ class EmployeeProfileService {
     }
 
     await docRecord.save();
-
     return { profile, documents: docRecord };
   }
 
   // ── Submit a section ──────────────────────────────────────────────────
   async submitSection(userId, section) {
-    const validSections = ["personal", "education", "bank", "documents"];
+    const validSections = ["personal", "education", "career", "bank", "documents"];
     if (!validSections.includes(section)) {
       throw new AppError(`Invalid section: ${section}`, 400);
     }
@@ -239,7 +282,6 @@ class EmployeeProfileService {
     const profile = await EmployeeProfile.findOne({ userId });
     if (!profile) throw new AppError("Profile not found", 404);
 
-    // FIX: block re-submission once onboarding is fully approved
     if (profile.overallStatus === "approved") {
       throw new AppError(
         "Onboarding is already completed. No changes allowed.",
@@ -270,26 +312,44 @@ class EmployeeProfileService {
     }
 
     if (section !== "documents") {
-      const detailsKey = `${section}Details`;
-      const sectionData = normalizeSectionData(
-        section,
-        mergeSectionData(profile[detailsKey], profile.draftData?.[section]),
-      );
+      let sectionData;
 
-      assertSectionDetailsComplete(section, sectionData);
-      profile[detailsKey] = sectionData;
+      if (section === "education") {
+        // education is an array
+        const saved = profile.educationDetails || [];
+        const draft = profile.draftData?.education;
+        sectionData = (saved.length > 0 ? saved : draft) || [];
+        assertSectionDetailsComplete(section, sectionData);
+        profile.educationDetails = sectionData;
+      } else if (section === "career") {
+        const saved = profile.careerDetails || {};
+        const draft = profile.draftData?.career || {};
+        sectionData = { ...(saved.toObject?.() || saved), ...draft };
+        assertSectionDetailsComplete(section, sectionData);
+        profile.careerDetails = sectionData;
+      } else {
+        const detailsKey = `${section}Details`;
+        sectionData = mergeSectionData(
+          profile[detailsKey],
+          profile.draftData?.[section],
+        );
+        assertSectionDetailsComplete(section, sectionData);
+        profile[detailsKey] = sectionData;
+      }
     }
 
-    const currentStatus = profile.verificationStatus[section].status;
-    if (!["pending", "rejected"].includes(currentStatus)) {
-      throw new AppError(`Section is already ${currentStatus}.`, 400);
+    // Map career -> education slot in verificationStatus (career shares 'education' section)
+    const vsSection = section === 'career' ? 'education' : section;
+
+    const currentStatus = profile.verificationStatus[vsSection]?.status;
+    if (!currentStatus || !["pending", "rejected"].includes(currentStatus)) {
+      throw new AppError(`Section is already ${currentStatus || 'unknown'}.`, 400);
     }
 
     const previousStatus = currentStatus;
-    profile.verificationStatus[section].status = "submitted";
-    profile.verificationStatus[section].submittedAt = new Date();
+    profile.verificationStatus[vsSection].status = "submitted";
+    profile.verificationStatus[vsSection].submittedAt = new Date();
 
-    // Update overall status when all sections submitted
     const allSubmitted = ["personal", "education", "bank", "documents"].every(
       (s) =>
         ["submitted", "under_review", "approved"].includes(
@@ -298,7 +358,7 @@ class EmployeeProfileService {
     );
     if (allSubmitted) {
       profile.overallStatus = "form_submitted";
-      profile.onboardingStatus = "completed"; // FIX: mark onboarding complete
+      profile.onboardingStatus = "completed";
     }
 
     await profile.save();
@@ -306,7 +366,7 @@ class EmployeeProfileService {
     await VerificationLog.create({
       employeeId: userId,
       employeeProfileId: profile._id,
-      section,
+      section: vsSection,
       action: previousStatus === "rejected" ? "resubmitted" : "submitted",
       previousStatus,
       newStatus: "submitted",

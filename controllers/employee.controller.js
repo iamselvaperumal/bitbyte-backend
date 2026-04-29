@@ -6,13 +6,11 @@ exports.getProfile = catchAsync(async (req, res) => {
   res.status(200).json({ status: 'success', data: { profile, documents } });
 });
 
-// FIX: new endpoint — returns onboarding status to block form re-access
 exports.getOnboardingStatus = catchAsync(async (req, res) => {
   const status = await employeeService.getOnboardingStatus(req.user._id);
   res.status(200).json({ status: 'success', data: status });
 });
 
-// FIX: draft save — no validation, preserves partial data
 exports.saveDraft = catchAsync(async (req, res) => {
   const { section } = req.params;
   const profile = await employeeService.saveDraft(req.user._id, section, req.body);
@@ -23,7 +21,6 @@ exports.saveDraft = catchAsync(async (req, res) => {
   });
 });
 
-// FIX: get draft — restores all step data from server
 exports.getDraft = catchAsync(async (req, res) => {
   const profile = await employeeService.getDraft(req.user._id);
   res.status(200).json({ status: 'success', data: profile });
@@ -43,6 +40,16 @@ exports.saveEducationDetails = catchAsync(async (req, res) => {
   res.status(200).json({
     status: 'success',
     message: 'Education details saved successfully.',
+    data: { profile },
+  });
+});
+
+// NEW: career details
+exports.saveCareerDetails = catchAsync(async (req, res) => {
+  const profile = await employeeService.saveCareerDetails(req.user._id, req.body);
+  res.status(200).json({
+    status: 'success',
+    message: 'Career details saved successfully.',
     data: { profile },
   });
 });

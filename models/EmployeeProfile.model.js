@@ -105,7 +105,7 @@ const educationEntrySchema = new mongoose.Schema(
 // ─── Career Sub-schema ────────────────────────────────────────────────────────
 const careerSchema = new mongoose.Schema(
   {
-    type: { type: String, enum: ['fresher', 'experienced'], required: true },
+    type: { type: String, enum: ['fresher', 'experienced'] },
     // Experienced-only fields
     companyName:  {
       type: String, trim: true,

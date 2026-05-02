@@ -3,14 +3,17 @@ const logger = require('../utils/logger');
 
 class EmailService {
   constructor() {
+    logger.info('Email Service Version: 2.0.465-DEBUG');
+    logger.info(`Email Service initializing for user: ${process.env.SMTP_USER}`);
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      logger.error('Email configuration missing: SMTP_USER or SMTP_PASS not set in environment variables');
+      logger.error('CRITICAL: SMTP_USER or SMTP_PASS is missing from environment variables!');
     }
 
     this.transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // Use SSL directly
+      port: 587,
+      secure: false, // Must be false for 587
+      requireTLS: true,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -18,14 +21,11 @@ class EmailService {
       tls: {
         rejectUnauthorized: false,
       },
-      pool: true, // Use connection pooling
-      maxConnections: 1,
-      family: 4, // Force IPv4
       debug: true,
       logger: true,
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 15000,
+      connectionTimeout: 30000, // Increased to 30 seconds
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
     });
 
     // Verify connection on startup with more detail

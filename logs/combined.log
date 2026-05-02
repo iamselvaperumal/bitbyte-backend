@@ -244,3 +244,7 @@
 2026-05-02 12:41:32 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
 2026-05-02 12:41:32 [info]: Server running in development mode on port 5000
 2026-05-02 12:41:33 [warn]: MongoDB disconnected. Attempting to reconnect...
+2026-05-02 13:13:05 [info]: SMTP Server is ready to take our messages
+2026-05-02 13:13:07 [info]: Email sent to this.sample2131@gmail.com: Manual Test Email
+2026-05-02 13:27:19 [info]: SMTP Server is ready to take our messages
+2026-05-02 13:27:21 [info]: Email sent to this.sample2131@gmail.com: Manual Test Email (Port 465)

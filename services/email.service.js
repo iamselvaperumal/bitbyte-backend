@@ -5,11 +5,13 @@ class EmailService {
   constructor() {
     logger.info(`[EmailService] Initializing with SMTP_USER: ${process.env.SMTP_USER}`);
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      logger.error('[EmailService] CRITICAL: SMTP_USER or SMTP_PASS missing from environment!');
+      logger.error('[EmailService] CRITICAL: SMTP_USER or SMTP_PASS missing!');
     }
 
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -20,17 +22,14 @@ class EmailService {
       if (error) {
         logger.error(`[EmailService] SMTP verify failed: ${error.message}`);
       } else {
-        logger.info('[EmailService] SMTP ready — connected to Gmail successfully');
+        logger.info('[EmailService] SMTP ready — Gmail connected successfully');
       }
     });
   }
 
   async send({ to, subject, html }) {
-    const fromName = process.env.EMAIL_FROM_NAME || 'HR System';
+    const fromName = process.env.EMAIL_FROM_NAME || 'HR Onboarding System';
     const fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER;
-    
-    logger.debug(`Attempting to send email to ${to} using ${process.env.SMTP_USER}`);
-    
     try {
       const info = await this.transporter.sendMail({
         from: `"${fromName}" <${fromEmail}>`,
@@ -38,12 +37,9 @@ class EmailService {
         subject,
         html,
       });
-      logger.info(`Email sent successfully: ${info.messageId}`);
+      logger.info(`[EmailService] Email sent to ${to}: ${info.messageId}`);
     } catch (err) {
-      logger.error(`Email failed to ${to}: ${err.message}`);
-      if (err.code === 'EAUTH') {
-        logger.error('Authentication failed. Please verify your SMTP_USER and SMTP_PASS (App Password).');
-      }
+      logger.error(`[EmailService] Email failed to ${to}: ${err.message}`);
       throw err;
     }
   }
@@ -95,7 +91,7 @@ class EmailService {
           </div>
           ${status === 'rejected' ? `
             <p style="color:#475569">Please log in to update the rejected section and resubmit.</p>
-            <a href="${process.env.FRONTEND_URL}/employee/onboarding" style="display:inline-block;background:#1d4ed8;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600">Update & Resubmit</a>
+            <a href="${process.env.FRONTEND_URL}/employee/onboarding" style="display:inline-block;background:#1d4ed8;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600">Update &amp; Resubmit</a>
           ` : '<p style="color:#475569">Our team will continue reviewing your remaining sections.</p>'}
         </div>
       </div>

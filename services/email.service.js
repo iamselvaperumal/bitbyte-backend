@@ -8,20 +8,32 @@ class EmailService {
     }
 
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
-      connectionTimeout: 15000, // 15 seconds
-      greetingTimeout: 15000,
-      socketTimeout: 15000,
+      tls: {
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
+      },
+      debug: true, // Enable debug logs
+      logger: true, // Log to console
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 20000,
+      dnsTimeout: 10000,
     });
 
-    // Verify connection on startup
+    // Verify connection on startup with more detail
     this.transporter.verify((error, success) => {
       if (error) {
-        logger.error(`SMTP Connection Error: ${error.message}`);
+        logger.error(`SMTP Connection Error (Detail): ${error.message}`);
+        if (error.code === 'ETIMEDOUT') {
+          logger.error('The connection timed out. This usually means the port is blocked or the host is unreachable.');
+        }
       } else {
         logger.info('SMTP Server is ready to take our messages');
       }
@@ -29,16 +41,24 @@ class EmailService {
   }
 
   async send({ to, subject, html }) {
+    const fromName = process.env.EMAIL_FROM_NAME || 'HR System';
+    const fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER;
+    
+    logger.debug(`Attempting to send email to ${to} using ${process.env.SMTP_USER}`);
+    
     try {
-      await this.transporter.sendMail({
-        from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM}>`,
+      const info = await this.transporter.sendMail({
+        from: `"${fromName}" <${fromEmail}>`,
         to,
         subject,
         html,
       });
-      logger.info(`Email sent to ${to}: ${subject}`);
+      logger.info(`Email sent successfully: ${info.messageId}`);
     } catch (err) {
       logger.error(`Email failed to ${to}: ${err.message}`);
+      if (err.code === 'EAUTH') {
+        logger.error('Authentication failed. Please verify your SMTP_USER and SMTP_PASS (App Password).');
+      }
       throw err;
     }
   }

@@ -321,3 +321,14 @@
 2026-05-02 17:49:28 [info]: [EmailService] Initializing with SMTP_USER: dev.iamselva@gmail.com
 2026-05-02 17:49:30 [info]: [EmailService] SMTP ready — Gmail connected successfully
 2026-05-02 17:49:31 [info]: [EmailService] Email sent to dev.iamselva@gmail.com: <ffb4eeae-96d0-d9b7-9c0b-0de633f1bf3b@gmail.com>
+2026-05-02 18:01:24 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-02 18:01:25 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-02 18:01:25 [info]: Server running in development mode on port 5000
+2026-05-02 18:01:26 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-02 18:01:33 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-02 18:01:36 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-02 18:01:38 [info]: [EmailService] Email sent to dev.iamselva@gmail.com: <a3572150-6096-8cc1-f82b-a7eb51c8b4d3@gmail.com>
+2026-05-02 18:11:10 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-02 18:11:11 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-02 18:11:11 [info]: Server running in development mode on port 5000
+2026-05-02 18:11:12 [info]: [EmailService] SMTP ready — Gmail connected successfully

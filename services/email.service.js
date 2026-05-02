@@ -4,18 +4,15 @@ const logger = require('../utils/logger');
 
 class EmailService {
   constructor() {
-    // Uses SMTP_PASS as the SendGrid API key (SG.xxx) on Render
-    // Uses SMTP_USER/SMTP_PASS with Gmail locally
-    const isProduction = process.env.NODE_ENV === 'production';
+    // Smart Detection: If SMTP_PASS starts with SG., use SendGrid HTTP (Production/Render)
+    // Otherwise use Gmail SMTP (Local Development)
+    const isSendGrid = process.env.SMTP_PASS && process.env.SMTP_PASS.startsWith('SG.');
 
-    if (isProduction) {
-      if (!process.env.SMTP_PASS || !process.env.SMTP_PASS.startsWith('SG.')) {
-        logger.error('[EmailService] CRITICAL: SMTP_PASS must be a SendGrid API key (SG.xxx) in production!');
-      }
+    if (isSendGrid) {
       this.transporter = nodemailer.createTransport(
         nodemailerSendgrid({ apiKey: process.env.SMTP_PASS })
       );
-      logger.info('[EmailService] Production mode — using SendGrid HTTP API');
+      logger.info('[EmailService] Smart Detection: Using SendGrid HTTP API');
     } else {
       this.transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.gmail.com',

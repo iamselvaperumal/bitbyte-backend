@@ -24,6 +24,19 @@ exports.finalReview = catchAsync(async (req, res) => {
     req.body,
     req.user
   );
+  
+  const Notification = require('../models/Notification.model');
+  await Notification.create({
+    recipientId: profile.userId,
+    type: req.body.action === 'approved' ? 'final_approved' : 'final_rejected',
+    channel: 'in_app',
+    subject: `Final Review ${req.body.action.charAt(0).toUpperCase() + req.body.action.slice(1)}`,
+    body: req.body.action === 'approved' 
+      ? `Your onboarding is approved. Your Employee ID is ${employeeId}.`
+      : 'Your onboarding application has been rejected.',
+    status: 'pending'
+  });
+
   res.status(200).json({
     status: 'success',
     message:

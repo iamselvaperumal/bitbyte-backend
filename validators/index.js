@@ -60,7 +60,7 @@ const registerUserSchema = Joi.object({
     .messages({ 'string.pattern.base': 'First name must contain only alphabets and spaces' }),
   lastName:  Joi.string().trim().pattern(ALPHA_SPACE).min(2).max(50).required()
     .messages({ 'string.pattern.base': 'Last name must contain only alphabets and spaces' }),
-  role: Joi.string().valid('employee', 'admin', 'super_admin').default('employee'),
+  role: Joi.string().valid('employee', 'admin', 'super_admin', 'intern').default('employee'),
 });
 
 const resetPasswordSchema = Joi.object({
@@ -267,7 +267,7 @@ const verificationSchema = Joi.object({
 });
 
 const documentVerifySchema = Joi.object({
-  docType: Joi.string().valid('aadhaar','pan','passbook','passport').required(),
+  docType: Joi.string().valid('aadhaar','pan','passbook','passport','resume').required(),
   action:  Joi.string().valid('approved','rejected').required(),
   comments: Joi.when('action', {
     is: 'rejected',
@@ -292,7 +292,7 @@ const createUserSchema = Joi.object({
     .messages({ 'string.pattern.base': 'First name must contain only alphabets and spaces' }),
   lastName:  Joi.string().trim().pattern(ALPHA_SPACE).min(2).max(50).required()
     .messages({ 'string.pattern.base': 'Last name must contain only alphabets and spaces' }),
-  role:      Joi.string().valid('admin','super_admin').default('admin'),
+  role:      Joi.string().valid('admin','super_admin', 'intern').default('admin'),
 });
 
 module.exports = {

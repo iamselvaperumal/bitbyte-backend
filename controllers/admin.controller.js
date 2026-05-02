@@ -15,6 +15,15 @@ exports.getEmployeeDetail = catchAsync(async (req, res) => {
 exports.verifySection = catchAsync(async (req, res) => {
   const { profileId, section } = req.params;
   const profile = await adminService.verifySection(profileId, section, req.body, req.user);
+  const Notification = require('../models/Notification.model');
+  await Notification.create({
+    recipientId: profile.userId,
+    type: req.body.action === 'approved' ? 'section_approved' : 'section_rejected',
+    channel: 'in_app',
+    subject: `Section ${req.body.action.charAt(0).toUpperCase() + req.body.action.slice(1)}`,
+    body: `Your ${section} section has been ${req.body.action} by Admin.`,
+    status: 'pending'
+  });
   res.status(200).json({
     status: 'success',
     message: `Section "${section}" has been ${req.body.action}.`,
@@ -42,6 +51,19 @@ exports.markDocumentViewed = catchAsync(async (req, res) => {
 
 exports.forwardToSuperAdmin = catchAsync(async (req, res) => {
   const profile = await adminService.forwardToSuperAdmin(req.params.profileId, req.user);
+  const Notification = require('../models/Notification.model');
+  const User = require('../models/User.model');
+  const superAdmins = await User.find({ role: 'super_admin' });
+  for (const superAdmin of superAdmins) {
+    await Notification.create({
+      recipientId: superAdmin._id,
+      type: 'form_forwarded',
+      channel: 'in_app',
+      subject: 'Employee Form Forwarded',
+      body: `A form has been forwarded to you for final approval.`,
+      status: 'pending'
+    });
+  }
   res.status(200).json({
     status: 'success',
     message: 'Employee profile forwarded to Super Admin for final approval.',

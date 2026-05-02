@@ -61,8 +61,8 @@ class AuthService {
       createdBy: createdBy || null,
     });
 
-    // Only create an EmployeeProfile for employees
-    if (role === 'employee') {
+    // Only create an EmployeeProfile for employees and interns
+    if (role === 'employee' || role === 'intern') {
       await EmployeeProfile.create({ userId: user._id });
     }
 

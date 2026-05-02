@@ -11,6 +11,7 @@ const documentUpload = upload.fields([
   { name: 'pan',      maxCount: 1 },
   { name: 'passbook', maxCount: 1 },
   { name: 'passport', maxCount: 1 },
+  { name: 'resume',   maxCount: 1 },
 ]);
 
 const handleDocumentUpload = (req, res, next) => {
@@ -26,7 +27,7 @@ const handleDocumentUpload = (req, res, next) => {
 };
 
 router.use(protect);
-router.use(authorize('employee'));
+router.use(authorize('employee', 'intern'));
 router.use(checkFirstLogin);
 
 // Profile & status

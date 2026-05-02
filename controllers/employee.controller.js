@@ -78,6 +78,29 @@ exports.uploadDocuments = catchAsync(async (req, res) => {
 exports.submitSection = catchAsync(async (req, res) => {
   const { section } = req.params;
   const profile = await employeeService.submitSection(req.user._id, section);
+  const Notification = require('../models/Notification.model');
+  await Notification.create({
+    recipientId: req.user._id,
+    type: 'section_submitted',
+    channel: 'in_app',
+    subject: 'Section Submitted',
+    body: `You have successfully submitted the ${section} section.`,
+    status: 'pending'
+  });
+  
+  const User = require('../models/User.model');
+  const admins = await User.find({ role: 'admin' });
+  for (const admin of admins) {
+    await Notification.create({
+      recipientId: admin._id,
+      type: 'employee_form_submitted',
+      channel: 'in_app',
+      subject: 'New Employee Form Submission',
+      body: `An employee has submitted the ${section} section for review.`,
+      status: 'pending'
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     message: `${section} section submitted for review.`,

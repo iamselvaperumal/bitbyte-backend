@@ -10,16 +10,6 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: [
-        'registration_credentials',
-        'section_approved',
-        'section_rejected',
-        'forwarded_to_super_admin',
-        'final_approved',
-        'final_rejected',
-        'employee_id_generated',
-        'password_reset',
-      ],
       required: true,
     },
     channel: {

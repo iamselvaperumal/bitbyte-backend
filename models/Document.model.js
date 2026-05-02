@@ -49,12 +49,14 @@ const documentSchema = new mongoose.Schema(
     pan: { type: fileSchema, default: null },
     passbook: { type: fileSchema, default: null },
     passport: { type: fileSchema, default: null },
+    resume: { type: fileSchema, default: null },
 
     // FIX: Per-document verification status — initialize with pending status
     aadhaarStatus: { type: docVerificationSchema, default: () => ({ status: "pending" }) },
     panStatus: { type: docVerificationSchema, default: () => ({ status: "pending" }) },
     passbookStatus: { type: docVerificationSchema, default: () => ({ status: "pending" }) },
     passportStatus: { type: docVerificationSchema, default: () => ({ status: "pending" }) },
+    resumeStatus: { type: docVerificationSchema, default: () => ({ status: "pending" }) },
 
     submittedAt: { type: Date },
     isDeleted: { type: Boolean, default: false },
@@ -73,7 +75,8 @@ documentSchema.virtual("isMandatoryComplete").get(function () {
   return !!(
     this.aadhaar?.fileUrl &&
     this.pan?.fileUrl &&
-    this.passbook?.fileUrl
+    this.passbook?.fileUrl &&
+    this.resume?.fileUrl
   );
 });
 
@@ -82,7 +85,8 @@ documentSchema.virtual("allRequiredApproved").get(function () {
   return (
     this.aadhaarStatus?.status === "approved" &&
     this.panStatus?.status === "approved" &&
-    this.passbookStatus?.status === "approved"
+    this.passbookStatus?.status === "approved" &&
+    this.resumeStatus?.status === "approved"
   );
 });
 
@@ -92,6 +96,7 @@ documentSchema.methods.getUploadedDocs = function () {
   if (this.pan) docs.pan = this.pan;
   if (this.passbook) docs.passbook = this.passbook;
   if (this.passport) docs.passport = this.passport;
+  if (this.resume) docs.resume = this.resume;
   return docs;
 };
 

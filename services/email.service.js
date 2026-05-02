@@ -3,40 +3,24 @@ const logger = require('../utils/logger');
 
 class EmailService {
   constructor() {
-    logger.info('Email Service Version: 2.0.465-DEBUG');
-    logger.info(`Email Service initializing for user: ${process.env.SMTP_USER}`);
+    logger.info(`[EmailService] Initializing with SMTP_USER: ${process.env.SMTP_USER}`);
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      logger.error('CRITICAL: SMTP_USER or SMTP_PASS is missing from environment variables!');
+      logger.error('[EmailService] CRITICAL: SMTP_USER or SMTP_PASS missing from environment!');
     }
 
     this.transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // Must be false for 587
-      requireTLS: true,
+      service: 'gmail',
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
-      tls: {
-        rejectUnauthorized: false,
-      },
-      debug: true,
-      logger: true,
-      connectionTimeout: 30000, // Increased to 30 seconds
-      greetingTimeout: 30000,
-      socketTimeout: 30000,
     });
 
-    // Verify connection on startup with more detail
-    this.transporter.verify((error, success) => {
+    this.transporter.verify((error) => {
       if (error) {
-        logger.error(`SMTP Connection Error (Detail): ${error.message}`);
-        if (error.code === 'ETIMEDOUT') {
-          logger.error('The connection timed out. This usually means the port is blocked or the host is unreachable.');
-        }
+        logger.error(`[EmailService] SMTP verify failed: ${error.message}`);
       } else {
-        logger.info('SMTP Server is ready to take our messages');
+        logger.info('[EmailService] SMTP ready — connected to Gmail successfully');
       }
     });
   }

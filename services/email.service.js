@@ -9,22 +9,23 @@ class EmailService {
 
     this.transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
+      port: 465,
+      secure: true, // Use SSL directly
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
       tls: {
         rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
       },
-      debug: true, // Enable debug logs
-      logger: true, // Log to console
-      connectionTimeout: 20000,
-      greetingTimeout: 20000,
-      socketTimeout: 20000,
-      dnsTimeout: 10000,
+      pool: true, // Use connection pooling
+      maxConnections: 1,
+      family: 4, // Force IPv4
+      debug: true,
+      logger: true,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
     });
 
     // Verify connection on startup with more detail

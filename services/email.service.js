@@ -1,30 +1,40 @@
 const nodemailer = require('nodemailer');
+const nodemailerSendgrid = require('nodemailer-sendgrid');
 const logger = require('../utils/logger');
 
 class EmailService {
   constructor() {
-    logger.info(`[EmailService] Initializing with SMTP_USER: ${process.env.SMTP_USER}`);
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      logger.error('[EmailService] CRITICAL: SMTP_USER or SMTP_PASS missing!');
-    }
+    // Uses SMTP_PASS as the SendGrid API key (SG.xxx) on Render
+    // Uses SMTP_USER/SMTP_PASS with Gmail locally
+    const isProduction = process.env.NODE_ENV === 'production';
 
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-
-    this.transporter.verify((error) => {
-      if (error) {
-        logger.error(`[EmailService] SMTP verify failed: ${error.message}`);
-      } else {
-        logger.info('[EmailService] SMTP ready — Gmail connected successfully');
+    if (isProduction) {
+      if (!process.env.SMTP_PASS || !process.env.SMTP_PASS.startsWith('SG.')) {
+        logger.error('[EmailService] CRITICAL: SMTP_PASS must be a SendGrid API key (SG.xxx) in production!');
       }
-    });
+      this.transporter = nodemailer.createTransport(
+        nodemailerSendgrid({ apiKey: process.env.SMTP_PASS })
+      );
+      logger.info('[EmailService] Production mode — using SendGrid HTTP API');
+    } else {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: Number(process.env.SMTP_PORT) || 587,
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+      this.transporter.verify((error) => {
+        if (error) {
+          logger.error(`[EmailService] SMTP verify failed: ${error.message}`);
+        } else {
+          logger.info('[EmailService] SMTP ready — Gmail connected successfully');
+        }
+      });
+      logger.info('[EmailService] Development mode — using Gmail SMTP');
+    }
   }
 
   async send({ to, subject, html }) {

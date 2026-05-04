@@ -376,3 +376,26 @@
 2026-05-04 15:21:05 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
 2026-05-04 15:21:05 [info]: Server running in development mode on port 5000
 2026-05-04 15:21:06 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-04 15:42:35 [warn]: MongoDB disconnected. Attempting to reconnect...
+2026-05-04 15:59:17 [warn]: MongoDB disconnected. Attempting to reconnect...
+2026-05-04 16:27:33 [warn]: MongoDB disconnected. Attempting to reconnect...
+2026-05-04 16:40:50 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-04 16:40:51 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-04 16:40:51 [info]: Server running in development mode on port 5000
+2026-05-04 16:40:52 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-04 16:40:58 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-04 16:40:59 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-04 16:40:59 [info]: Server running in development mode on port 5000
+2026-05-04 16:41:01 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-04 16:41:17 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-04 16:41:18 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-04 16:41:18 [info]: Server running in development mode on port 5000
+2026-05-04 16:41:19 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-04 16:42:41 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-04 16:42:43 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-04 16:42:43 [info]: Server running in development mode on port 5000
+2026-05-04 16:42:44 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-04 16:42:51 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-04 16:42:52 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-04 16:42:52 [info]: Server running in development mode on port 5000
+2026-05-04 16:42:53 [info]: [EmailService] SMTP ready — Gmail connected successfully

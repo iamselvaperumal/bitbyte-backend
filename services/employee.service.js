@@ -351,8 +351,9 @@ class EmployeeProfileService {
       if (section === "education") {
         // education is an array
         const saved = profile.educationDetails || [];
-        const draft = profile.draftData?.education;
-        sectionData = (saved.length > 0 ? saved : draft) || [];
+        const draft = (profile.draftData?.education?.education || profile.draftData?.education) || [];
+        const savedHasData = saved.some(item => hasValue(item));
+        sectionData = (savedHasData ? saved : draft) || [];
         assertSectionDetailsComplete(section, sectionData);
         profile.educationDetails = sectionData;
       } else if (section === "career") {
@@ -376,8 +377,14 @@ class EmployeeProfileService {
     const vsSection = section === 'career' ? 'education' : section;
 
     const currentStatus = profile.verificationStatus[vsSection]?.status;
+    const isEducationCareer = section === 'education' || section === 'career';
+
     if (!currentStatus || !["pending", "rejected"].includes(currentStatus)) {
-      throw new AppError(`Section is already ${currentStatus || 'unknown'}.`, 400);
+      // If it's education/career, we allow resubmission even if already submitted/under_review
+      // because they are two separate steps in the UI sharing one status slot.
+      if (!isEducationCareer || !["submitted", "under_review"].includes(currentStatus)) {
+        throw new AppError(`Section is already ${currentStatus || 'unknown'}.`, 400);
+      }
     }
 
     const previousStatus = currentStatus;

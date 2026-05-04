@@ -40,7 +40,7 @@ const getPathValue = (source, path) =>
 const hydrateReviewSection = (saved, draft, requiredAnchors) => {
   const isArray = Array.isArray(saved);
   const savedHasSubmittedData = isArray
-    ? saved.length > 0
+    ? saved.some((item) => hasValue(item))
     : requiredAnchors.some((path) => hasValue(getPathValue(saved, path)));
 
   if (!savedHasSubmittedData && hasValue(draft)) {
@@ -138,9 +138,12 @@ class AdminService {
       profile.draftData?.personal,
       ['firstName', 'lastName', 'mobile', 'aadhaarNumber', 'panNumber'],
     );
+    const draftEdu = profile.draftData?.education;
+    const eduDraft = (draftEdu && Array.isArray(draftEdu.education)) ? draftEdu.education : draftEdu;
+
     profile.educationDetails = hydrateReviewSection(
       profile.educationDetails,
-      profile.draftData?.education,
+      eduDraft,
       ['level', 'degree', 'institution'],
     );
     profile.careerDetails = hydrateReviewSection(
@@ -158,6 +161,33 @@ class AdminService {
     let documents = await Document.findOne({ employeeProfileId: profileId }).lean();
     if (!documents && profile.userId) {
       documents = await Document.findOne({ userId: profile.userId._id || profile.userId }).lean();
+    }
+
+    const sections = ['personal', 'education', 'bank', 'documents'];
+    let changed = false;
+    sections.forEach((s) => {
+      if (profile.verificationStatus[s]?.status === 'submitted') {
+        profile.verificationStatus[s].status = 'under_review';
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      if (profile.overallStatus === 'form_submitted') {
+        profile.overallStatus = 'under_review';
+      }
+      // We need the model instance to save, but profile is lean. 
+      // Let's re-fetch the model and save if changed.
+      const profileModel = await EmployeeProfile.findById(profileId);
+      sections.forEach((s) => {
+        if (profileModel.verificationStatus[s]?.status === 'submitted') {
+          profileModel.verificationStatus[s].status = 'under_review';
+        }
+      });
+      if (profileModel.overallStatus === 'form_submitted') {
+        profileModel.overallStatus = 'under_review';
+      }
+      await profileModel.save();
     }
 
     const logs = await VerificationLog.find({ employeeProfileId: profileId })

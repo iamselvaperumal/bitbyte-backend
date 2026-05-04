@@ -36,7 +36,8 @@ class EmailService {
 
   async send({ to, subject, html }) {
     const fromName = process.env.EMAIL_FROM_NAME || 'HR Onboarding System';
-    const fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER;
+    // Force verified email as fallback
+    const fromEmail = process.env.EMAIL_FROM || 'dev.iamselva@gmail.com'; 
     try {
       const info = await this.transporter.sendMail({
         from: `"${fromName}" <${fromEmail}>`,

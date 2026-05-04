@@ -332,3 +332,30 @@
 2026-05-02 18:11:11 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
 2026-05-02 18:11:11 [info]: Server running in development mode on port 5000
 2026-05-02 18:11:12 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-02 18:29:09 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-02 18:29:10 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-02 18:29:10 [info]: Server running in development mode on port 5000
+2026-05-02 18:29:11 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-02 19:11:22 [warn]: MongoDB disconnected. Attempting to reconnect...
+2026-05-02 19:15:44 [warn]: MongoDB disconnected. Attempting to reconnect...
+2026-05-02 22:27:34 [warn]: MongoDB disconnected. Attempting to reconnect...
+2026-05-04 09:05:39 [warn]: MongoDB disconnected. Attempting to reconnect...
+2026-05-04 09:27:44 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-04 09:27:46 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-04 09:27:46 [info]: Server running in development mode on port 5000
+2026-05-04 09:27:47 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-04 09:27:53 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-04 09:27:54 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-04 09:27:54 [info]: Server running in development mode on port 5000
+2026-05-04 09:27:55 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-04 09:28:03 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-04 09:28:05 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-04 09:28:05 [info]: Server running in development mode on port 5000
+2026-05-04 09:28:06 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-04 09:28:19 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-04 09:28:20 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-04 09:28:20 [info]: Server running in development mode on port 5000
+2026-05-04 09:28:22 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-04 09:57:38 [warn]: MongoDB disconnected. Attempting to reconnect...
+2026-05-04 10:02:45 [warn]: MongoDB disconnected. Attempting to reconnect...
+2026-05-04 10:17:08 [warn]: MongoDB disconnected. Attempting to reconnect...

@@ -3,6 +3,7 @@ const User            = require('../models/User.model');
 const VerificationLog = require('../models/VerificationLog.model');
 const authService     = require('./auth.service');
 const emailService    = require('./email.service');
+const notificationService = require('./notification.service');
 const AppError        = require('../utils/AppError');
 const logger          = require('../utils/logger');
 
@@ -133,6 +134,10 @@ class SuperAdminService {
       emailService
         .sendFinalApproval({ to: profile.userId.email, firstName: profile.userId.firstName, employeeId })
         .catch((err) => logger.error(`Final approval email failed: ${err.message}`));
+
+      // In-app notification
+      notificationService.notifyEmployeeFinalDecision(profile.userId._id, 'approved', comments, employeeId)
+        .catch((err) => logger.error(`Final approval in-app notification failed: ${err.message}`));
     } else {
       profile.overallStatus = 'rejected';
 
@@ -147,6 +152,10 @@ class SuperAdminService {
       emailService
         .sendFinalRejection({ to: profile.userId.email, firstName: profile.userId.firstName, comments })
         .catch((err) => logger.error(`Final rejection email failed: ${err.message}`));
+
+      // In-app notification
+      notificationService.notifyEmployeeFinalDecision(profile.userId._id, 'rejected', comments)
+        .catch((err) => logger.error(`Final rejection in-app notification failed: ${err.message}`));
     }
 
     await profile.save();

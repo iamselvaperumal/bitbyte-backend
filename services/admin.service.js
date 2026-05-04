@@ -2,6 +2,7 @@ const EmployeeProfile = require('../models/EmployeeProfile.model');
 const Document        = require('../models/Document.model');
 const VerificationLog = require('../models/VerificationLog.model');
 const emailService    = require('./email.service');
+const notificationService = require('./notification.service');
 const AppError        = require('../utils/AppError');
 const logger          = require('../utils/logger');
 
@@ -206,7 +207,11 @@ class AdminService {
     const employee = profile.userId;
     emailService
       .sendSectionStatus({ to: employee.email, firstName: employee.firstName, section, status: action, comments })
-      .catch((err) => logger.error(`Section notification failed: ${err.message}`));
+      .catch((err) => logger.error(`Section email notification failed: ${err.message}`));
+
+    // In-app notification
+    notificationService.notifyEmployeeSectionUpdate(employee._id, section, action, comments)
+      .catch((err) => logger.error(`Section in-app notification failed: ${err.message}`));
 
     return profile;
   }
@@ -296,7 +301,15 @@ class AdminService {
 
     emailService
       .sendForwardedNotification({ to: profile.userId.email, firstName: profile.userId.firstName })
-      .catch((err) => logger.error(`Forward notification failed: ${err.message}`));
+      .catch((err) => logger.error(`Forward email notification failed: ${err.message}`));
+
+    // In-app notification for employee
+    notificationService.notifyEmployeeForwarded(profile.userId._id)
+      .catch((err) => logger.error(`Forward in-app notification for employee failed: ${err.message}`));
+
+    // In-app notification for super admins
+    notificationService.notifySuperAdminNewForward(profile, adminUser)
+      .catch((err) => logger.error(`Forward in-app notification for super admins failed: ${err.message}`));
 
     return profile;
   }

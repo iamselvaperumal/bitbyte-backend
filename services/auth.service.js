@@ -3,6 +3,7 @@ const EmployeeProfile = require('../models/EmployeeProfile.model');
 const Notification = require('../models/Notification.model');
 const { generateToken } = require('../middlewares/auth.middleware');
 const emailService = require('./email.service');
+const notificationService = require('./notification.service');
 const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
 
@@ -85,6 +86,11 @@ class AuthService {
           status: 'failed', failureReason: err.message,
         }).exec();
       });
+
+    // Notify Admins about new registration
+    notificationService.notifyAdminNewRegistration(user).catch(err => {
+      logger.error(`Admin notification for registration failed: ${err.message}`);
+    });
 
     const userObj = user.toObject();
     delete userObj.password;

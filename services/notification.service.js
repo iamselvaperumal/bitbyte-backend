@@ -122,6 +122,59 @@ class NotificationService {
 
     await Promise.all(promises);
   }
+
+  /**
+   * Notify admins when an employee submits a section
+   */
+  async notifyAdminSectionSubmission(employeeUser, section) {
+    const admins = await User.find({ 
+      role: { $in: ['admin', 'super_admin'] },
+      status: 'active',
+      isDeleted: false 
+    });
+
+    const sectionLabel = section.charAt(0).toUpperCase() + section.slice(1);
+    const subject = `New Section Submission: ${sectionLabel}`;
+    const body = `${employeeUser.firstName} ${employeeUser.lastName} has submitted the ${sectionLabel} section for review.`;
+
+    const promises = admins.map(admin => 
+      this.createNotification({
+        recipientId: admin._id,
+        type: 'section_submission',
+        subject,
+        body,
+        metadata: { userId: employeeUser._id, section }
+      })
+    );
+
+    await Promise.all(promises);
+  }
+
+  /**
+   * Notify admins when an employee completes the entire onboarding form
+   */
+  async notifyAdminProfileCompletion(employeeUser) {
+    const admins = await User.find({ 
+      role: { $in: ['admin', 'super_admin'] },
+      status: 'active',
+      isDeleted: false 
+    });
+
+    const subject = 'Onboarding Form Completed';
+    const body = `Employee ${employeeUser.firstName} ${employeeUser.lastName} has completed all sections and submitted their profile for final verification.`;
+
+    const promises = admins.map(admin => 
+      this.createNotification({
+        recipientId: admin._id,
+        type: 'profile_completion',
+        subject,
+        body,
+        metadata: { userId: employeeUser._id }
+      })
+    );
+
+    await Promise.all(promises);
+  }
 }
 
 module.exports = new NotificationService();

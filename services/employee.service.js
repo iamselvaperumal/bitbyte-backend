@@ -1,6 +1,7 @@
 const EmployeeProfile = require("../models/EmployeeProfile.model");
 const Document = require("../models/Document.model");
 const VerificationLog = require("../models/VerificationLog.model");
+const notificationService = require("./notification.service");
 const AppError = require("../utils/AppError");
 
 const assertSectionEditable = (profile, section) => {
@@ -362,6 +363,19 @@ class EmployeeProfileService {
     }
 
     await profile.save();
+
+    // Trigger in-app notifications for admins
+    const user = profile.userId._id ? profile.userId : await require('../models/User.model').findById(userId);
+    
+    notificationService.notifyAdminSectionSubmission(user, vsSection).catch(err => 
+      require('../utils/logger').error(`Admin notification for section submission failed: ${err.message}`)
+    );
+
+    if (profile.overallStatus === "form_submitted") {
+      notificationService.notifyAdminProfileCompletion(user).catch(err => 
+        require('../utils/logger').error(`Admin notification for profile completion failed: ${err.message}`)
+      );
+    }
 
     await VerificationLog.create({
       employeeId: userId,

@@ -399,3 +399,11 @@
 2026-05-04 16:42:52 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
 2026-05-04 16:42:52 [info]: Server running in development mode on port 5000
 2026-05-04 16:42:53 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-04 16:51:00 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-04 16:51:01 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-04 16:51:01 [info]: Server running in development mode on port 5000
+2026-05-04 16:51:02 [info]: [EmailService] SMTP ready — Gmail connected successfully
+2026-05-04 16:53:47 [info]: [EmailService] Development mode — using Gmail SMTP
+2026-05-04 16:53:50 [info]: MongoDB connected: ac-57nl7ua-shard-00-00.vpbf2qu.mongodb.net
+2026-05-04 16:53:50 [info]: Server running in development mode on port 5000
+2026-05-04 16:53:51 [info]: [EmailService] SMTP ready — Gmail connected successfully

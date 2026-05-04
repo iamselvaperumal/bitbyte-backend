@@ -266,8 +266,10 @@ class AdminService {
       || await Document.findOne({ userId: profile.userId._id });
     if (!documents) throw new AppError('Documents not found', 404);
 
-    // Check doc was actually uploaded
-    if (!documents[docType]) throw new AppError(`${docType} document not uploaded`, 400);
+    // Check doc was actually uploaded, UNLESS it's a rejection (requesting upload)
+    if (!documents[docType] && action !== 'rejected') {
+      throw new AppError(`${docType} document not uploaded`, 400);
+    }
 
     const statusKey = `${docType}Status`;
     documents[statusKey].status     = action;
@@ -277,11 +279,15 @@ class AdminService {
     await documents.save();
 
     // FIX: if all required docs approved → approve the documents section
-    if (documents.aadhaarStatus?.status === 'approved' &&
+    const docSectionStatus = profile.verificationStatus['documents']?.status;
+    
+    if (docSectionStatus !== 'approved' &&
+        documents.aadhaarStatus?.status === 'approved' &&
         documents.panStatus?.status     === 'approved' &&
-        documents.passbookStatus?.status=== 'approved') {
-      await this.verifySection(profileId, 'documents', { action: 'approved', comments: 'All documents verified' }, adminUser);
-    } else if (action === 'rejected') {
+        documents.passbookStatus?.status=== 'approved' &&
+        documents.resumeStatus?.status  === 'approved') {
+      await this.verifySection(profileId, 'documents', { action: 'approved', comments: 'All required documents verified' }, adminUser);
+    } else if (action === 'rejected' && docSectionStatus !== 'rejected') {
       // Any rejection → reject the section
       await this.verifySection(profileId, 'documents', { action: 'rejected', comments }, adminUser);
     }

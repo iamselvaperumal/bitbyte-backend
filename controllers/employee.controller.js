@@ -54,6 +54,30 @@ exports.saveCareerDetails = catchAsync(async (req, res) => {
   });
 });
 
+exports.updateDepartment = catchAsync(async (req, res) => {
+  const profile = await employeeService.updateDepartment(
+    req.body.profileId,
+    req.body.department
+  );
+  res.status(200).json({
+    status: 'success',
+    message: 'Department updated successfully.',
+    data: { profile },
+  });
+});
+
+exports.updatePosition = catchAsync(async (req, res) => {
+  const profile = await employeeService.updatePosition(
+    req.body.profileId,
+    req.body.position
+  );
+  res.status(200).json({
+    status: 'success',
+    message: 'Position updated successfully.',
+    data: { profile },
+  });
+});
+
 exports.saveBankDetails = catchAsync(async (req, res) => {
   const profile = await employeeService.saveBankDetails(req.user._id, req.body);
   res.status(200).json({

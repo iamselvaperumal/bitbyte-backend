@@ -4,6 +4,8 @@ const VerificationLog = require("../models/VerificationLog.model");
 const notificationService = require("./notification.service");
 const AppError = require("../utils/AppError");
 
+const POSITION_OPTIONS = ["Intern", "Full-time"];
+
 const assertSectionEditable = (profile, section) => {
   const status = profile.verificationStatus[section]?.status;
   if (status === "approved") {
@@ -124,7 +126,7 @@ class EmployeeProfileService {
   async getOnboardingStatus(userId) {
     const profile = await EmployeeProfile.findOne({ userId })
       .select(
-        "overallStatus onboardingStatus verificationStatus employeeId isDraft",
+        "overallStatus onboardingStatus verificationStatus employeeId isDraft appliedPosition department position",
       )
       .lean();
     if (!profile) throw new AppError("Profile not found", 404);
@@ -149,7 +151,7 @@ class EmployeeProfileService {
   async getDraft(userId) {
     const profile = await EmployeeProfile.findOne({ userId })
       .select(
-        "draftData isDraft personalDetails educationDetails careerDetails bankDetails verificationStatus overallStatus",
+        "draftData isDraft personalDetails educationDetails careerDetails bankDetails verificationStatus overallStatus appliedPosition department position",
       )
       .lean();
     if (!profile) throw new AppError("Profile not found", 404);
@@ -199,6 +201,10 @@ class EmployeeProfileService {
     const profile = await EmployeeProfile.findOne({ userId });
     if (!profile) throw new AppError("Profile not found", 404);
 
+    if (data.appliedPosition) {
+      profile.appliedPosition = data.appliedPosition;
+    }
+
     // If fresher, strip experience fields to prevent data injection
     if (data.type === "fresher") {
       delete data.companyName;
@@ -210,6 +216,32 @@ class EmployeeProfileService {
       ...(profile.careerDetails?.toObject?.() || profile.careerDetails || {}),
       ...data,
     };
+    await profile.save();
+    return profile;
+  }
+
+  async updateDepartment(profileId, department) {
+    if (!department || !department.trim()) {
+      throw new AppError("Department must be selected.", 400);
+    }
+
+    const profile = await EmployeeProfile.findById(profileId);
+    if (!profile) throw new AppError("Profile not found", 404);
+
+    profile.department = department.trim();
+    await profile.save();
+    return profile;
+  }
+
+  async updatePosition(profileId, position) {
+    if (!POSITION_OPTIONS.includes(position)) {
+      throw new AppError("Position must be Intern or Full-time.", 400);
+    }
+
+    const profile = await EmployeeProfile.findById(profileId);
+    if (!profile) throw new AppError("Profile not found", 404);
+
+    profile.position = position;
     await profile.save();
     return profile;
   }

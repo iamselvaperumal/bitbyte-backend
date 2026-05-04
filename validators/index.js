@@ -48,6 +48,8 @@ const PREDEFINED_SKILLS = [
   'Others',
 ];
 
+const POSITION_OPTIONS = ['Intern', 'Full-time'];
+
 // ── Auth schemas ──────────────────────────────────────────────────────────
 const loginSchema = Joi.object({
   email:    Joi.string().email().required(),
@@ -178,6 +180,8 @@ const educationDetailsDraftSchema = Joi.object({
 
 // ── Career Details Schema ─────────────────────────────────────────────────
 const careerDetailsSchema = Joi.object({
+  appliedPosition: Joi.string().valid(...POSITION_OPTIONS).required()
+    .messages({ 'any.only': 'Applied position must be Intern or Full-time' }),
   type: Joi.string().valid('fresher', 'experienced').required()
     .messages({ 'any.required': 'Career type (fresher/experienced) is required' }),
   // Experienced-only fields
@@ -224,7 +228,7 @@ const careerDetailsSchema = Joi.object({
 });
 
 const careerDetailsDraftSchema = careerDetailsSchema.fork(
-  ['type', 'expectedCTC', 'noticePeriod', 'skills'],
+  ['appliedPosition', 'type', 'expectedCTC', 'noticePeriod', 'skills'],
   (s) => s.optional()
 );
 
@@ -295,6 +299,22 @@ const createUserSchema = Joi.object({
   role:      Joi.string().valid('admin','super_admin', 'intern').default('admin'),
 });
 
+const attendanceActionSchema = Joi.object({
+  employeeId: Joi.string().hex().length(24).required(),
+});
+
+const departmentUpdateSchema = Joi.object({
+  profileId: Joi.string().hex().length(24).required(),
+  department: Joi.string().trim().min(1).max(80).required()
+    .messages({ 'string.empty': 'Department must be selected' }),
+});
+
+const positionUpdateSchema = Joi.object({
+  profileId: Joi.string().hex().length(24).required(),
+  position: Joi.string().valid(...POSITION_OPTIONS).required()
+    .messages({ 'any.only': 'Position must be Intern or Full-time' }),
+});
+
 module.exports = {
   validate,
   PREDEFINED_SKILLS,
@@ -315,5 +335,8 @@ module.exports = {
     documentVerify:         documentVerifySchema,
     superAdminReview:       superAdminReviewSchema,
     createUser:             createUserSchema,
+    attendanceAction:       attendanceActionSchema,
+    departmentUpdate:       departmentUpdateSchema,
+    positionUpdate:         positionUpdateSchema,
   },
 };

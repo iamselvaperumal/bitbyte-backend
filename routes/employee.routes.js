@@ -27,6 +27,24 @@ const handleDocumentUpload = (req, res, next) => {
 };
 
 router.use(protect);
+
+// HR assignment endpoints used from Admin/Super Admin dashboards.
+router.put(
+  '/update-department',
+  authorize('admin', 'super_admin'),
+  checkFirstLogin,
+  validate(schemas.departmentUpdate),
+  employeeController.updateDepartment
+);
+
+router.put(
+  '/update-position',
+  authorize('admin', 'super_admin'),
+  checkFirstLogin,
+  validate(schemas.positionUpdate),
+  employeeController.updatePosition
+);
+
 router.use(authorize('employee', 'intern'));
 router.use(checkFirstLogin);
 

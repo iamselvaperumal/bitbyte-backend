@@ -105,6 +105,7 @@ const educationEntrySchema = new mongoose.Schema(
 // ─── Career Sub-schema ────────────────────────────────────────────────────────
 const careerSchema = new mongoose.Schema(
   {
+    appliedPosition: { type: String, enum: ['Intern', 'Full-time'] },
     type: { type: String, enum: ['fresher', 'experienced'] },
     // Experienced-only fields
     companyName:  {
@@ -155,6 +156,11 @@ const employeeProfileSchema = new mongoose.Schema(
       index: true,
     },
     employeeId: { type: String, unique: true, sparse: true, index: true },
+
+    // ── HR assignment ─────────────────────────────────────────────────
+    appliedPosition: { type: String, enum: ['Intern', 'Full-time'], trim: true },
+    department:      { type: String, trim: true },
+    position:        { type: String, enum: ['Intern', 'Full-time'], trim: true },
 
     // ── Sections ─────────────────────────────────────────────────────────
     personalDetails:  { type: personalDetailsSchema,  default: () => ({}) },
@@ -234,6 +240,7 @@ const employeeProfileSchema = new mongoose.Schema(
 // ─── Indexes ──────────────────────────────────────────────────────────────────
 employeeProfileSchema.index({ overallStatus: 1, createdAt: -1 });
 employeeProfileSchema.index({ onboardingStatus: 1 });
+employeeProfileSchema.index({ department: 1, position: 1 });
 // Unique + sparse indexes for Aadhaar & PAN (enforced at DB level)
 employeeProfileSchema.index(
   { 'personalDetails.aadhaarNumber': 1 },

@@ -107,6 +107,9 @@ class SuperAdminService {
     if (!reviewableStatuses.includes(profile.overallStatus)) {
       throw new AppError(`Cannot review. Current status: ${profile.overallStatus}`, 400);
     }
+    if (action === 'approved' && (!profile.department || !profile.position)) {
+      throw new AppError('Department and position must be assigned before final approval.', 400);
+    }
 
     profile.superAdminReview = {
       reviewedBy: superAdminUser._id,

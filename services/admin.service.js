@@ -279,10 +279,14 @@ class AdminService {
     if (!profile.allSectionsApproved()) {
       throw new AppError('All sections must be approved before forwarding to Super Admin.', 400);
     }
+    if (!profile.department || !profile.position) {
+      throw new AppError('Assign department and position before forwarding to Super Admin.', 400);
+    }
     if (!['admin_approved', 'under_review'].includes(profile.overallStatus)) {
       throw new AppError(`Cannot forward. Current status: ${profile.overallStatus}`, 400);
     }
 
+    const previousStatus = profile.overallStatus;
     profile.overallStatus = 'under_super_admin_review';
     profile.forwardedBy   = adminUser._id;
     profile.forwardedAt   = new Date();
@@ -293,7 +297,7 @@ class AdminService {
       employeeProfileId: profile._id,
       section:     'overall',
       action:      'forwarded_to_super_admin',
-      previousStatus: profile.overallStatus,
+      previousStatus,
       newStatus:   'under_super_admin_review',
       verifiedBy:  adminUser._id,
       verifierRole:'admin',

@@ -96,6 +96,7 @@ const educationEntrySchema = new mongoose.Schema(
     degree:          { type: String, trim: true },
     specialization:  { type: String, trim: true },
     institution:     { type: String, trim: true },
+    university:      { type: String, trim: true }, // Added university field
     yearOfPassing:   { type: Number, min: 1980 },
     percentage:      { type: Number, min: 0, max: 100 },
   },

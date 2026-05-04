@@ -282,6 +282,7 @@ class EmployeeProfileService {
       pan: files.pan?.[0],
       passbook: files.passbook?.[0],
       passport: files.passport?.[0],
+      resume: files.resume?.[0],
     };
 
     for (const [field, file] of Object.entries(fieldMap)) {

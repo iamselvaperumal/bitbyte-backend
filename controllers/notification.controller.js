@@ -13,7 +13,8 @@ exports.getNotifications = catchAsync(async (req, res) => {
 });
 
 exports.markAsRead = catchAsync(async (req, res) => {
-  await Notification.findByIdAndUpdate(req.params.id, { status: 'sent' });
+  // FIX: Delete notification on view as requested
+  await Notification.findByIdAndDelete(req.params.id);
   res.status(200).json({ status: 'success' });
 });
 

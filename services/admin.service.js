@@ -38,13 +38,16 @@ const getPathValue = (source, path) =>
   path.split('.').reduce((current, key) => current?.[key], source);
 
 const hydrateReviewSection = (saved, draft, requiredAnchors) => {
-  const savedHasSubmittedData = requiredAnchors.some((path) =>
-    hasValue(getPathValue(saved, path)),
-  );
+  const isArray = Array.isArray(saved);
+  const savedHasSubmittedData = isArray
+    ? saved.length > 0
+    : requiredAnchors.some((path) => hasValue(getPathValue(saved, path)));
 
   if (!savedHasSubmittedData && hasValue(draft)) {
-    return mergeWithDraftFallback(draft, saved);
+    return draft;
   }
+
+  if (isArray) return saved;
 
   return mergeWithDraftFallback(saved, draft);
 };
@@ -138,7 +141,12 @@ class AdminService {
     profile.educationDetails = hydrateReviewSection(
       profile.educationDetails,
       profile.draftData?.education,
-      ['educationLevel', 'highestDegree', 'collegeName', 'university'],
+      ['level', 'degree', 'institution'],
+    );
+    profile.careerDetails = hydrateReviewSection(
+      profile.careerDetails,
+      profile.draftData?.career,
+      ['type', 'expectedCTC'],
     );
     profile.bankDetails = hydrateReviewSection(
       profile.bankDetails,
@@ -216,9 +224,9 @@ class AdminService {
     return profile;
   }
 
-  // FIX: per-document verification (aadhaar/pan/passbook/passport)
+  // FIX: per-document verification (aadhaar/pan/passbook/passport/resume)
   async verifyDocument(profileId, { docType, action, comments }, adminUser) {
-    const validTypes = ['aadhaar', 'pan', 'passbook', 'passport'];
+    const validTypes = ['aadhaar', 'pan', 'passbook', 'passport', 'resume'];
     if (!validTypes.includes(docType)) throw new AppError(`Invalid doc type: ${docType}`, 400);
 
     const profile  = await EmployeeProfile.findById(profileId).populate('userId', 'email firstName');
@@ -253,7 +261,7 @@ class AdminService {
 
   // FIX: mark admin has viewed a specific document
   async markDocumentViewed(profileId, docType, adminUser) {
-    const validTypes = ['aadhaar', 'pan', 'passbook', 'passport'];
+    const validTypes = ['aadhaar', 'pan', 'passbook', 'passport', 'resume'];
     if (!validTypes.includes(docType)) throw new AppError(`Invalid doc type: ${docType}`, 400);
 
     const profile   = await EmployeeProfile.findById(profileId);

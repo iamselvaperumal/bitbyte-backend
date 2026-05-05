@@ -1,4 +1,5 @@
 const attendanceService = require('../services/attendance.service');
+const googleAttendanceService = require('../services/googleAttendance.service');
 const catchAsync = require('../utils/catchAsync');
 
 exports.checkIn = catchAsync(async (req, res) => {
@@ -30,5 +31,15 @@ exports.markAbsent = catchAsync(async (req, res) => {
 
 exports.getTodayAttendance = catchAsync(async (req, res) => {
   const result = await attendanceService.getTodayAttendance();
+  res.status(200).json({ status: 'success', data: result });
+});
+
+exports.getGoogleSheetAttendance = catchAsync(async (req, res) => {
+  const result = await googleAttendanceService.getAttendance({
+    date: req.query.date,
+    sheetName: req.query.sheet,
+    forceRefresh: req.query.refresh === 'true',
+  });
+
   res.status(200).json({ status: 'success', data: result });
 });

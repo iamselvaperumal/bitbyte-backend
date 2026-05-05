@@ -5,12 +5,12 @@ const { protect, authorize, checkFirstLogin } = require('../middlewares/auth.mid
 const { validate, schemas } = require('../validators/index');
 
 router.use(protect);
-router.use(authorize('admin', 'super_admin'));
 router.use(checkFirstLogin);
 
-router.get('/today', attendanceController.getTodayAttendance);
-router.post('/check-in', validate(schemas.attendanceAction), attendanceController.checkIn);
-router.post('/check-out', validate(schemas.attendanceAction), attendanceController.checkOut);
-router.post('/absent', validate(schemas.attendanceAction), attendanceController.markAbsent);
+router.get('/google-sheet', authorize('admin', 'super_admin'), attendanceController.getGoogleSheetAttendance);
+router.get('/today', authorize('admin', 'super_admin'), attendanceController.getTodayAttendance);
+router.post('/check-in', authorize('admin'), validate(schemas.attendanceAction), attendanceController.checkIn);
+router.post('/check-out', authorize('admin'), validate(schemas.attendanceAction), attendanceController.checkOut);
+router.post('/absent', authorize('admin'), validate(schemas.attendanceAction), attendanceController.markAbsent);
 
 module.exports = router;

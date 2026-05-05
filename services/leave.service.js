@@ -345,6 +345,17 @@ class LeaveService {
     }));
   }
 
+  async markLeave(payload, adminUser) {
+    const request = await this.createRequest(payload, adminUser);
+    const approvedRequest = await this.approve(request._id, adminUser);
+    const leave = await this.getEmployeeLeave(payload.employeeId, getYear(payload.fromDate));
+
+    return {
+      request: approvedRequest,
+      leave,
+    };
+  }
+
   deductBalance(leave, balanceKey, days) {
     const balance = leave[balanceKey];
     const available = Math.max(toNumber(balance.remaining), 0);

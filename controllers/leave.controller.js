@@ -34,6 +34,17 @@ exports.createLeaveRequest = catchAsync(async (req, res) => {
   });
 });
 
+exports.markLeave = catchAsync(async (req, res) => {
+  const result = await leaveService.markLeave(req.body, req.user);
+  res.status(201).json({
+    status: 'success',
+    message: result.request.lopDays > 0
+      ? 'Leave marked with LOP for exhausted balance.'
+      : 'Leave marked successfully.',
+    data: result,
+  });
+});
+
 exports.approveLeaveRequest = catchAsync(async (req, res) => {
   const result = await leaveService.approve(req.body.requestId, req.user);
   res.status(200).json({

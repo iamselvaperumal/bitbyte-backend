@@ -14,6 +14,7 @@ router.get('/me', authorize('employee', 'intern'), leaveController.getMyLeave);
 router.get('/:employeeId', authorize('admin'), leaveController.getEmployeeLeave);
 
 router.post('/allocate', authorize('admin'), validate(schemas.leaveAllocation), leaveController.allocateLeave);
+router.post('/mark', authorize('admin'), validate(schemas.leaveMark), leaveController.markLeave);
 router.post('/request', authorize('admin'), validate(schemas.leaveRequest), leaveController.createLeaveRequest);
 router.put('/approve', authorize('admin'), validate(schemas.leaveDecision), leaveController.approveLeaveRequest);
 router.put('/reject', authorize('admin'), validate(schemas.leaveReject), leaveController.rejectLeaveRequest);

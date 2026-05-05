@@ -65,6 +65,7 @@ GET /api/v1/leaves/me
 GET /api/v1/leaves/:employeeId
 GET /api/v1/leaves/requests
 POST /api/v1/leaves/allocate
+POST /api/v1/leaves/mark
 POST /api/v1/leaves/request
 PUT /api/v1/leaves/approve
 PUT /api/v1/leaves/reject

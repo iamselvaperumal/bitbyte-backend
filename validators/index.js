@@ -351,6 +351,10 @@ const leaveRequestSchema = Joi.object({
   reason: Joi.string().trim().min(3).max(1000).optional().allow(''),
 });
 
+const leaveMarkSchema = leaveRequestSchema.keys({
+  employeeId: Joi.string().hex().length(24).required(),
+});
+
 const leaveDecisionSchema = Joi.object({
   requestId: Joi.string().hex().length(24).required(),
 });
@@ -392,6 +396,7 @@ module.exports = {
     departmentUpdate:       departmentUpdateSchema,
     positionUpdate:         positionUpdateSchema,
     leaveAllocation:        leaveAllocationSchema,
+    leaveMark:              leaveMarkSchema,
     leaveRequest:           leaveRequestSchema,
     leaveDecision:          leaveDecisionSchema,
     leaveReject:            leaveRejectSchema,

@@ -145,6 +145,24 @@ const getCredentialsPath = () => {
   return resolvedPath;
 };
 
+const getCredentials = () => {
+  const inlineCredentials =
+    process.env.GOOGLE_SHEETS_CREDENTIALS_JSON ||
+    process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+
+  if (!inlineCredentials) {
+    console.error("DEBUG: inlineCredentials is empty or undefined. Type:", typeof process.env.GOOGLE_SHEETS_CREDENTIALS_JSON);
+    return null;
+  }
+
+  try {
+    return JSON.parse(inlineCredentials);
+  } catch (error) {
+    console.error("DEBUG: JSON.parse failed. Content preview:", inlineCredentials.substring(0, 20));
+    throw new AppError('Google Sheets service account JSON is invalid.', 503);
+  }
+};
+
 const createSheetsClient = () => {
   if (process.env.GOOGLE_SHEETS_API_KEY) {
     return google.sheets({
@@ -153,8 +171,9 @@ const createSheetsClient = () => {
     });
   }
 
+  const credentials = getCredentials();
   const auth = new google.auth.GoogleAuth({
-    keyFile: getCredentialsPath(),
+    ...(credentials ? { credentials } : { keyFile: getCredentialsPath() }),
     scopes: [SHEETS_READONLY_SCOPE],
   });
 

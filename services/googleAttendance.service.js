@@ -312,6 +312,7 @@ class GoogleAttendanceService {
       throw new AppError('Google attendance sheet must include Employee ID or Employee Name headers.', 400);
     }
 
+    const seen = new Set();
     const records = dataRows
       .map((row, rowIndex) => {
         const employeeId = getCell(row, indexes.employeeId);
@@ -330,6 +331,17 @@ class GoogleAttendanceService {
         if (requestedDate && indexes.date >= 0 && normalizedRowDate !== requestedDate) {
           return null;
         }
+
+        // Deduplication: only allow one entry per employee per date
+        // Note: normalizedRowDate might be undefined if date column is missing, 
+        // in which case we fallback to a generic key.
+        const dateKey = normalizedRowDate || 'no-date';
+        const dedupKey = `${employeeId.toLowerCase()}|${dateKey}`;
+        
+        if (seen.has(dedupKey)) {
+          return null;
+        }
+        seen.add(dedupKey);
 
         return {
           employeeId,

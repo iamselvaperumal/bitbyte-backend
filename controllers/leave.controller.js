@@ -11,6 +11,11 @@ exports.getEmployeeLeave = catchAsync(async (req, res) => {
   res.status(200).json({ status: 'success', data: result });
 });
 
+exports.getMyLeave = catchAsync(async (req, res) => {
+  const result = await leaveService.getMyLeave(req.user._id, req.query.year);
+  res.status(200).json({ status: 'success', data: result });
+});
+
 exports.allocateLeave = catchAsync(async (req, res) => {
   const result = await leaveService.allocate(req.body, req.user);
   res.status(200).json({

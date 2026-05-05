@@ -268,6 +268,19 @@ class LeaveService {
     return this.serializeLeave(leave, profile);
   }
 
+  async getMyLeave(userId, year = getYear()) {
+    const profile = await EmployeeProfile.findOne({
+      userId,
+      isDeleted: false,
+      overallStatus: 'approved',
+    }).populate('userId', 'firstName lastName email');
+
+    if (!profile) throw new AppError('Leave balance is available after onboarding approval.', 404);
+
+    const leave = await this.ensureEmployeeLeaveForProfile(profile, Number(year));
+    return this.serializeLeave(leave, profile);
+  }
+
   async allocate({ employeeId, year = getYear(), balances }, adminUser) {
     const leave = await this.ensureEmployeeLeave(employeeId, Number(year));
 

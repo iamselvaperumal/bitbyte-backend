@@ -61,6 +61,7 @@ Leave APIs:
 
 ```http
 GET /api/v1/leaves/all
+GET /api/v1/leaves/me
 GET /api/v1/leaves/:employeeId
 GET /api/v1/leaves/requests
 POST /api/v1/leaves/allocate

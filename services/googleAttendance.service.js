@@ -383,23 +383,26 @@ class GoogleAttendanceService {
       });
     });
 
-    return records.map((record) => {
-      const profile = getEmployeeMapKeys(record.employeeId)
-        .map((key) => profileByEmployeeId.get(key))
-        .find(Boolean);
+    return records
+      .map((record) => {
+        const profile = getEmployeeMapKeys(record.employeeId)
+          .map((key) => profileByEmployeeId.get(key))
+          .find(Boolean);
 
-      if (!profile) return record;
+        // Unauthorized/Unrecognized employee: do not show in application
+        if (!profile) return null;
 
-      const profileName = `${profile.userId?.firstName || ''} ${profile.userId?.lastName || ''}`.trim();
+        const profileName = `${profile.userId?.firstName || ''} ${profile.userId?.lastName || ''}`.trim();
 
-      return {
-        ...record,
-        name: record.name || profileName,
-        email: profile.userId?.email,
-        department: record.department || profile.department || '',
-        position: profile.position,
-      };
-    });
+        return {
+          ...record,
+          name: record.name || profileName,
+          email: profile.userId?.email,
+          department: record.department || profile.department || '',
+          position: profile.position,
+        };
+      })
+      .filter(Boolean);
   }
 }
 

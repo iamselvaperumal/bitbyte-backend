@@ -42,3 +42,30 @@ GET /api/v1/attendance/google-sheet
 GET /api/v1/attendance/google-sheet?date=2026-05-05
 GET /api/v1/attendance/google-sheet?sheet=May%202026&refresh=true
 ```
+
+## Leave Management
+
+Optional policy environment variables:
+
+```env
+LEAVE_EARNED_DAYS=15
+LEAVE_CASUAL_DAYS=8
+LEAVE_SICK_DAYS=8
+LEAVE_MATERNITY_DAYS=182
+LEAVE_PATERNITY_DAYS=15
+LEAVE_COMP_OFF_VALIDITY_DAYS=30
+LEAVE_PUBLIC_HOLIDAYS=2026-01-26,2026-08-15,2026-10-02
+```
+
+Leave APIs:
+
+```http
+GET /api/v1/leaves/all
+GET /api/v1/leaves/:employeeId
+GET /api/v1/leaves/requests
+POST /api/v1/leaves/allocate
+POST /api/v1/leaves/request
+PUT /api/v1/leaves/approve
+PUT /api/v1/leaves/reject
+POST /api/v1/leaves/comp-off
+```

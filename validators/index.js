@@ -315,6 +315,59 @@ const positionUpdateSchema = Joi.object({
     .messages({ 'any.only': 'Position must be Intern or Full-time' }),
 });
 
+const leaveBalanceUpdateSchema = Joi.object({
+  total: Joi.number().min(0).optional(),
+  used: Joi.number().min(0).optional(),
+}).min(1);
+
+const leaveAllocationSchema = Joi.object({
+  employeeId: Joi.string().hex().length(24).required(),
+  year: Joi.number().integer().min(2020).max(2100).optional(),
+  balances: Joi.object({
+    earnedLeave: leaveBalanceUpdateSchema.optional(),
+    casualLeave: leaveBalanceUpdateSchema.optional(),
+    sickLeave: leaveBalanceUpdateSchema.optional(),
+    maternityLeave: leaveBalanceUpdateSchema.optional(),
+    paternityLeave: leaveBalanceUpdateSchema.optional(),
+  }).min(1).required(),
+});
+
+const leaveTypeSchema = Joi.string().valid(
+  'earned_leave',
+  'casual_leave',
+  'sick_leave',
+  'maternity_leave',
+  'paternity_leave',
+  'comp_off',
+  'lop'
+);
+
+const leaveRequestSchema = Joi.object({
+  employeeId: Joi.string().hex().length(24).optional(),
+  leaveType: leaveTypeSchema.required(),
+  fromDate: Joi.date().required(),
+  toDate: Joi.date().min(Joi.ref('fromDate')).required(),
+  days: Joi.number().min(0.5).optional(),
+  reason: Joi.string().trim().min(3).max(1000).optional().allow(''),
+});
+
+const leaveDecisionSchema = Joi.object({
+  requestId: Joi.string().hex().length(24).required(),
+});
+
+const leaveRejectSchema = Joi.object({
+  requestId: Joi.string().hex().length(24).required(),
+  rejectionReason: Joi.string().trim().min(3).max(1000).required(),
+});
+
+const compOffGrantSchema = Joi.object({
+  employeeId: Joi.string().hex().length(24).required(),
+  days: Joi.number().min(0.5).required(),
+  grantedDate: Joi.date().optional(),
+  validityDays: Joi.number().integer().min(1).max(365).optional(),
+  reason: Joi.string().trim().max(500).optional().allow(''),
+});
+
 module.exports = {
   validate,
   PREDEFINED_SKILLS,
@@ -338,5 +391,10 @@ module.exports = {
     attendanceAction:       attendanceActionSchema,
     departmentUpdate:       departmentUpdateSchema,
     positionUpdate:         positionUpdateSchema,
+    leaveAllocation:        leaveAllocationSchema,
+    leaveRequest:           leaveRequestSchema,
+    leaveDecision:          leaveDecisionSchema,
+    leaveReject:            leaveRejectSchema,
+    compOffGrant:           compOffGrantSchema,
   },
 };

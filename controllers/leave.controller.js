@@ -75,6 +75,14 @@ exports.grantCompOff = catchAsync(async (req, res) => {
 });
 
 exports.getLeaveRequests = catchAsync(async (req, res) => {
-  const result = await leaveService.getRequests(req.query);
+  const query = { ...req.query };
+
+  // If not admin, force employeeId to be the current user's profile ID
+  if (!['admin', 'super_admin'].includes(req.user.role)) {
+    const profile = await leaveService.getSelfEmployeeProfile(req.user._id);
+    query.employeeId = profile._id.toString();
+  }
+
+  const result = await leaveService.getRequests(query);
   res.status(200).json({ status: 'success', data: { requests: result } });
 });

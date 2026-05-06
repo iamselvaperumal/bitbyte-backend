@@ -205,7 +205,7 @@ class LeaveService {
     };
   }
 
-  serializeRequest(request) {
+  serializeRequest(request, balance) {
     const profile = request.employeeId;
     return {
       _id: request._id,
@@ -225,6 +225,7 @@ class LeaveService {
       rejectionReason: request.rejectionReason,
       reviewedAt: request.reviewedAt,
       createdAt: request.createdAt,
+      currentBalance: balance ? balance[BALANCE_KEYS[request.leaveType]] : null,
     };
   }
 
@@ -329,6 +330,24 @@ class LeaveService {
       payload.days
     );
 
+    // Check for overlapping requests
+    const start = startOfDay(payload.fromDate);
+    const end = startOfDay(payload.toDate);
+    const overlapping = await LeaveRequest.findOne({
+      employeeId,
+      status: { $ne: 'rejected' },
+      $or: [
+        { fromDate: { $lte: end }, toDate: { $gte: start } },
+      ],
+    });
+
+    if (overlapping) {
+      throw new AppError(
+        `You already have a ${overlapping.status} leave request for this period (${formatDateKey(overlapping.fromDate)} to ${formatDateKey(overlapping.toDate)}).`,
+        400
+      );
+    }
+
     const request = await LeaveRequest.create({
       employeeId,
       leaveType: payload.leaveType,
@@ -339,10 +358,14 @@ class LeaveService {
       requestedBy: user._id,
     });
 
-    return this.serializeRequest(await request.populate({
-      path: 'employeeId',
-      populate: { path: 'userId', select: 'firstName lastName email' },
-    }));
+    const balance = await EmployeeLeave.findOne({ employeeId, year: getYear(payload.fromDate) });
+    return this.serializeRequest(
+      await request.populate({
+        path: 'employeeId',
+        populate: { path: 'userId', select: 'firstName lastName email' },
+      }),
+      balance
+    );
   }
 
   async markLeave(payload, adminUser) {
@@ -416,10 +439,13 @@ class LeaveService {
     request.reviewedAt = new Date();
     await request.save();
 
-    return this.serializeRequest(await request.populate({
-      path: 'employeeId',
-      populate: { path: 'userId', select: 'firstName lastName email' },
-    }));
+    return this.serializeRequest(
+      await request.populate({
+        path: 'employeeId',
+        populate: { path: 'userId', select: 'firstName lastName email' },
+      }),
+      leave
+    );
   }
 
   async reject(requestId, rejectionReason, adminUser) {
@@ -433,10 +459,14 @@ class LeaveService {
     request.reviewedAt = new Date();
     await request.save();
 
-    return this.serializeRequest(await request.populate({
-      path: 'employeeId',
-      populate: { path: 'userId', select: 'firstName lastName email' },
-    }));
+    const leave = await EmployeeLeave.findOne({ employeeId: request.employeeId, year: getYear(request.fromDate) });
+    return this.serializeRequest(
+      await request.populate({
+        path: 'employeeId',
+        populate: { path: 'userId', select: 'firstName lastName email' },
+      }),
+      leave
+    );
   }
 
   async grantCompOff({ employeeId, days, grantedDate, validityDays, reason }, adminUser) {
@@ -476,7 +506,16 @@ class LeaveService {
       .sort({ createdAt: -1 })
       .lean();
 
-    return requests.map((request) => this.serializeRequest(request));
+    const results = [];
+    for (const request of requests) {
+      const balance = await EmployeeLeave.findOne({ 
+        employeeId: request.employeeId._id, 
+        year: getYear(request.fromDate) 
+      });
+      results.push(this.serializeRequest(request, balance));
+    }
+
+    return results;
   }
 }
 

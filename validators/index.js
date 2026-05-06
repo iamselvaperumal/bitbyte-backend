@@ -372,6 +372,23 @@ const compOffGrantSchema = Joi.object({
   reason: Joi.string().trim().max(500).optional().allow(''),
 });
 
+const salaryComponentSchema = Joi.object({
+  label: Joi.string().trim().min(1).max(80).required(),
+  amount: Joi.number().min(0).required()
+    .messages({ 'number.min': 'Amount cannot be negative' }),
+});
+
+const payrollCreateSchema = Joi.object({
+  employeeId: Joi.string().trim().min(1).max(40).required(),
+  payPeriod: Joi.string().pattern(/^\d{4}-(0[1-9]|1[0-2])$/).required()
+    .messages({ 'string.pattern.base': 'Pay period must be in YYYY-MM format' }),
+  paidDays: Joi.number().min(0).max(31).required(),
+  lopDays: Joi.number().min(0).max(31).default(0),
+  payDate: Joi.date().required(),
+  earnings: Joi.array().items(salaryComponentSchema).min(1).required(),
+  deductions: Joi.array().items(salaryComponentSchema).default([]),
+});
+
 module.exports = {
   validate,
   PREDEFINED_SKILLS,
@@ -401,5 +418,6 @@ module.exports = {
     leaveDecision:          leaveDecisionSchema,
     leaveReject:            leaveRejectSchema,
     compOffGrant:           compOffGrantSchema,
+    payrollCreate:          payrollCreateSchema,
   },
 };

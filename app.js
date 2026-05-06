@@ -22,6 +22,7 @@ const dashboardRoutes = require("./routes/dashboard.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const attendanceRoutes = require("./routes/attendance.routes");
 const leaveRoutes = require("./routes/leave.routes");
+const payrollRoutes = require("./routes/payroll.routes");
 
 const app = express();
 
@@ -104,6 +105,7 @@ app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/attendance", attendanceRoutes);
 app.use("/api/v1/leaves", leaveRoutes);
+app.use("/api/v1/payroll", payrollRoutes);
 
 // ── 404 handler ────────────────────────────────────────────────────────────
 app.all("*", (req, res, next) => {

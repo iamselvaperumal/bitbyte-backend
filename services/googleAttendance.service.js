@@ -7,8 +7,11 @@ const AppError = require('../utils/AppError');
 
 const SHEETS_READONLY_SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 const DEFAULT_SHEET_NAME = 'Attendance';
-const DEFAULT_COLUMN_RANGE = 'A:Z';
+const DEFAULT_COLUMN_START = 'A';
+const DEFAULT_COLUMN_END = 'Z';
 const DEFAULT_CACHE_TTL_MS = 30 * 1000;
+const DEFAULT_MAX_RECORDS = 500;
+const MAX_RECORD_CAP = 2000;
 
 const cache = new Map();
 
@@ -101,20 +104,31 @@ const getEmployeeMapKeys = (value) => {
 
 const quoteSheetName = (sheetName) => `'${String(sheetName).replace(/'/g, "''")}'`;
 
-const buildRange = (sheetName) => {
+const boundOpenEndedRange = (range, recordLimit) =>
+  String(range).replace(/(^|!)([A-Z]+):([A-Z]+)$/i, (_match, prefix, start, end) => (
+    `${prefix}${start}1:${end}${recordLimit + 1}`
+  ));
+
+const buildRange = (sheetName, recordLimit) => {
   if (process.env.GOOGLE_ATTENDANCE_RANGE && !sheetName) {
-    return process.env.GOOGLE_ATTENDANCE_RANGE;
+    return boundOpenEndedRange(process.env.GOOGLE_ATTENDANCE_RANGE, recordLimit);
   }
 
   const resolvedSheetName =
     sheetName || process.env.GOOGLE_ATTENDANCE_SHEET_NAME || DEFAULT_SHEET_NAME;
 
-  return `${quoteSheetName(resolvedSheetName)}!${DEFAULT_COLUMN_RANGE}`;
+  return `${quoteSheetName(resolvedSheetName)}!${DEFAULT_COLUMN_START}1:${DEFAULT_COLUMN_END}${recordLimit + 1}`;
 };
 
 const getCacheTtl = () => {
   const configured = Number.parseInt(process.env.GOOGLE_ATTENDANCE_CACHE_TTL_MS || '', 10);
   return Number.isFinite(configured) && configured >= 0 ? configured : DEFAULT_CACHE_TTL_MS;
+};
+
+const getRecordLimit = (limit) => {
+  const configured = Number.parseInt(limit || process.env.GOOGLE_ATTENDANCE_MAX_RECORDS || '', 10);
+  if (!Number.isFinite(configured) || configured <= 0) return DEFAULT_MAX_RECORDS;
+  return Math.min(configured, MAX_RECORD_CAP);
 };
 
 const getSpreadsheetId = () => {
@@ -150,15 +164,11 @@ const getCredentials = () => {
     process.env.GOOGLE_SHEETS_CREDENTIALS_JSON ||
     process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
 
-  if (!inlineCredentials) {
-    console.error("DEBUG: inlineCredentials is empty or undefined. Type:", typeof process.env.GOOGLE_SHEETS_CREDENTIALS_JSON);
-    return null;
-  }
+  if (!inlineCredentials) return null;
 
   try {
     return JSON.parse(inlineCredentials);
   } catch (error) {
-    console.error("DEBUG: JSON.parse failed. Content preview:", inlineCredentials.substring(0, 20));
     throw new AppError('Google Sheets service account JSON is invalid.', 503);
   }
 };
@@ -256,11 +266,12 @@ const buildAnalytics = (records) => {
 };
 
 class GoogleAttendanceService {
-  async getAttendance({ date, sheetName, forceRefresh = false } = {}) {
+  async getAttendance({ date, sheetName, forceRefresh = false, limit } = {}) {
     const spreadsheetId = getSpreadsheetId();
-    const range = buildRange(sheetName);
+    const recordLimit = getRecordLimit(limit);
+    const range = buildRange(sheetName, recordLimit);
     const normalizedDate = normalizeDate(date);
-    const cacheKey = JSON.stringify({ spreadsheetId, range, date: normalizedDate });
+    const cacheKey = JSON.stringify({ spreadsheetId, range, date: normalizedDate, limit: recordLimit });
 
     if (!forceRefresh) {
       const cached = getCachedResult(cacheKey);
@@ -271,7 +282,7 @@ class GoogleAttendanceService {
       const sheets = createSheetsClient();
       const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
       const values = response.data.values || [];
-      const records = await this.transformRows(values, normalizedDate);
+      const { records, scannedRows, truncated } = await this.transformRows(values, normalizedDate, recordLimit);
 
       const result = {
         records,
@@ -280,6 +291,9 @@ class GoogleAttendanceService {
           spreadsheetId,
           range,
           fetchedAt: new Date().toISOString(),
+          limit: recordLimit,
+          scannedRows,
+          truncated,
         },
         cached: false,
       };
@@ -294,8 +308,8 @@ class GoogleAttendanceService {
     }
   }
 
-  async transformRows(values, requestedDate) {
-    if (!values.length) return [];
+  async transformRows(values, requestedDate, recordLimit = DEFAULT_MAX_RECORDS) {
+    if (!values.length) return { records: [], scannedRows: 0, truncated: false };
 
     const [headers, ...dataRows] = values;
     const indexes = {
@@ -313,50 +327,57 @@ class GoogleAttendanceService {
     }
 
     const seen = new Set();
-    const records = dataRows
-      .map((row, rowIndex) => {
-        const employeeId = getCell(row, indexes.employeeId);
-        const name = getCell(row, indexes.name);
-        const checkIn = getCell(row, indexes.checkIn);
-        const checkOut = getCell(row, indexes.checkOut);
-        const absent = getCell(row, indexes.absent);
-        const rowDate = getCell(row, indexes.date);
-        const department = getCell(row, indexes.department);
+    const records = [];
+    let scannedRows = 0;
 
-        if (![employeeId, name, checkIn, checkOut, absent, rowDate, department].some((value) => !isEmptyValue(value))) {
-          return null;
-        }
+    for (let rowIndex = 0; rowIndex < dataRows.length; rowIndex += 1) {
+      const row = dataRows[rowIndex];
+      scannedRows += 1;
 
-        const normalizedRowDate = normalizeDate(rowDate);
-        if (requestedDate && indexes.date >= 0 && normalizedRowDate !== requestedDate) {
-          return null;
-        }
+      const employeeId = getCell(row, indexes.employeeId);
+      const name = getCell(row, indexes.name);
+      const checkIn = getCell(row, indexes.checkIn);
+      const checkOut = getCell(row, indexes.checkOut);
+      const absent = getCell(row, indexes.absent);
+      const rowDate = getCell(row, indexes.date);
+      const department = getCell(row, indexes.department);
 
-        // Deduplication: only allow one entry per employee per date
-        // Note: normalizedRowDate might be undefined if date column is missing, 
-        // in which case we fallback to a generic key.
-        const dateKey = normalizedRowDate || 'no-date';
-        const dedupKey = `${employeeId.toLowerCase()}|${dateKey}`;
-        
-        if (seen.has(dedupKey)) {
-          return null;
-        }
-        seen.add(dedupKey);
+      if (![employeeId, name, checkIn, checkOut, absent, rowDate, department].some((value) => !isEmptyValue(value))) {
+        continue;
+      }
 
-        return {
-          employeeId,
-          name,
-          department,
-          checkIn: isEmptyValue(checkIn) ? '' : checkIn,
-          checkOut: isEmptyValue(checkOut) ? '' : checkOut,
-          status: determineStatus({ checkIn, absent }),
-          date: normalizedRowDate || undefined,
-          rowNumber: rowIndex + 2,
-        };
-      })
-      .filter(Boolean);
+      const normalizedRowDate = normalizeDate(rowDate);
+      if (requestedDate && indexes.date >= 0 && normalizedRowDate !== requestedDate) {
+        continue;
+      }
 
-    return this.enrichWithEmployeeProfiles(records);
+      const dateKey = normalizedRowDate || 'no-date';
+      const dedupKey = `${employeeId.toLowerCase()}|${dateKey}`;
+
+      if (seen.has(dedupKey)) {
+        continue;
+      }
+      seen.add(dedupKey);
+
+      records.push({
+        employeeId,
+        name,
+        department,
+        checkIn: isEmptyValue(checkIn) ? '' : checkIn,
+        checkOut: isEmptyValue(checkOut) ? '' : checkOut,
+        status: determineStatus({ checkIn, absent }),
+        date: normalizedRowDate || undefined,
+        rowNumber: rowIndex + 2,
+      });
+
+      if (records.length >= recordLimit) break;
+    }
+
+    return {
+      records: await this.enrichWithEmployeeProfiles(records),
+      scannedRows,
+      truncated: records.length >= recordLimit,
+    };
   }
 
   async enrichWithEmployeeProfiles(records) {

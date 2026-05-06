@@ -39,6 +39,7 @@ exports.getGoogleSheetAttendance = catchAsync(async (req, res) => {
     date: req.query.date,
     sheetName: req.query.sheet,
     forceRefresh: req.query.refresh === 'true',
+    limit: req.query.limit,
   });
 
   res.status(200).json({ status: 'success', data: result });

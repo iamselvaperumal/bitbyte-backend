@@ -1,7 +1,7 @@
 const Payroll = require('../models/Payroll.model');
 const EmployeeProfile = require('../models/EmployeeProfile.model');
 const AppError = require('../utils/AppError');
-const { amountInWords } = require('../utils/amountInWords');
+const payrollCalculator = require('./payrollCalculator');
 
 const COMPANY_DETAILS = {
   name: process.env.COMPANY_NAME || 'BitByte Tech',
@@ -10,36 +10,10 @@ const COMPANY_DETAILS = {
   logoUrl: process.env.COMPANY_LOGO_URL || '/logo.png',
 };
 
-const roundMoney = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
-
-const normalizeComponent = (component) => ({
-  label: String(component.label || '').trim(),
-  amount: roundMoney(component.amount || 0),
-});
-
-const normalizeComponents = (components = []) =>
-  components
-    .map(normalizeComponent)
-    .filter((component) => component.label.length > 0);
-
-const sumComponents = (components) =>
-  roundMoney(components.reduce((total, component) => total + Number(component.amount || 0), 0));
-
 const getEmployeeName = (profile) => {
   const personalName = `${profile.personalDetails?.firstName || ''} ${profile.personalDetails?.lastName || ''}`.trim();
   const userName = `${profile.userId?.firstName || ''} ${profile.userId?.lastName || ''}`.trim();
   return personalName || userName || 'Employee';
-};
-
-const assertNonNegativeComponents = (components, type) => {
-  components.forEach((component) => {
-    if (!component.label) {
-      throw new AppError(`${type} component label is required.`, 400);
-    }
-    if (!Number.isFinite(component.amount) || component.amount < 0) {
-      throw new AppError(`${component.label} must be a positive amount.`, 400);
-    }
-  });
 };
 
 const buildPayslipPayload = (payroll) => ({
@@ -81,33 +55,8 @@ class PayrollService {
     }));
   }
 
-  calculatePayroll({ earnings = [], deductions = [] }) {
-    const normalizedEarnings = normalizeComponents(earnings);
-    const normalizedDeductions = normalizeComponents(deductions);
-
-    if (!normalizedEarnings.length) {
-      throw new AppError('At least one earning component is required.', 400);
-    }
-
-    assertNonNegativeComponents(normalizedEarnings, 'Earning');
-    assertNonNegativeComponents(normalizedDeductions, 'Deduction');
-
-    const grossEarnings = sumComponents(normalizedEarnings);
-    const totalDeductions = sumComponents(normalizedDeductions);
-    const netSalary = roundMoney(grossEarnings - totalDeductions);
-
-    if (netSalary < 0) {
-      throw new AppError('Total deductions cannot exceed gross earnings.', 400);
-    }
-
-    return {
-      earnings: normalizedEarnings,
-      deductions: normalizedDeductions,
-      grossEarnings,
-      totalDeductions,
-      netSalary,
-      amountInWords: amountInWords(netSalary),
-    };
+  calculatePayroll(data) {
+    return payrollCalculator.calculatePayroll(data);
   }
 
   async createPayroll(data, createdBy) {

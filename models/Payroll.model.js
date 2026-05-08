@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const salaryComponentSchema = new mongoose.Schema(
   {
+    key: {
+      type: String,
+      trim: true,
+      maxlength: 80,
+      default: '',
+    },
     label: {
       type: String,
       required: true,
@@ -13,6 +19,16 @@ const salaryComponentSchema = new mongoose.Schema(
       required: true,
       min: 0,
       default: 0,
+    },
+    formula: {
+      type: String,
+      trim: true,
+      maxlength: 180,
+      default: '',
+    },
+    systemGenerated: {
+      type: Boolean,
+      default: false,
     },
   },
   { _id: true },
@@ -77,6 +93,12 @@ const payrollSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    fixedSalary: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
     earnings: {
       type: [salaryComponentSchema],
       default: () => [],
@@ -111,6 +133,36 @@ const payrollSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    calculationMetadata: {
+      engine: {
+        type: String,
+        trim: true,
+        default: 'manual-payroll-v1',
+      },
+      salaryBasis: {
+        type: String,
+        trim: true,
+        default: 'monthly',
+      },
+      generatedAt: {
+        type: Date,
+        default: Date.now,
+      },
+      additionalEarnings: {
+        type: Number,
+        min: 0,
+        default: 0,
+      },
+      additionalDeductions: {
+        type: Number,
+        min: 0,
+        default: 0,
+      },
+      rules: {
+        type: mongoose.Schema.Types.Mixed,
+        default: () => ({}),
+      },
     },
     status: {
       type: String,

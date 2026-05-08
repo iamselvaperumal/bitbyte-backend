@@ -373,9 +373,12 @@ const compOffGrantSchema = Joi.object({
 });
 
 const salaryComponentSchema = Joi.object({
+  key: Joi.string().trim().max(80).optional().allow(''),
   label: Joi.string().trim().min(1).max(80).required(),
   amount: Joi.number().min(0).required()
     .messages({ 'number.min': 'Amount cannot be negative' }),
+  formula: Joi.string().trim().max(180).optional().allow(''),
+  systemGenerated: Joi.boolean().optional(),
 });
 
 const payrollCreateSchema = Joi.object({
@@ -385,7 +388,13 @@ const payrollCreateSchema = Joi.object({
   paidDays: Joi.number().min(0).max(31).required(),
   lopDays: Joi.number().min(0).max(31).default(0),
   payDate: Joi.date().required(),
-  earnings: Joi.array().items(salaryComponentSchema).min(1).required(),
+  fixedSalary: Joi.number().greater(0).optional()
+    .messages({ 'number.greater': 'Fixed salary must be greater than zero' }),
+  earnings: Joi.when('fixedSalary', {
+    is: Joi.exist(),
+    then: Joi.array().items(salaryComponentSchema).default([]),
+    otherwise: Joi.array().items(salaryComponentSchema).min(1).required(),
+  }),
   deductions: Joi.array().items(salaryComponentSchema).default([]),
 });
 

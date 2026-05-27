@@ -30,14 +30,9 @@ const app = express();
 // Trust proxy for rate limiting (needed for Render/Heroku/Vercel)
 app.set('trust proxy', 1);
 
-// ── Swagger / OpenAPI documentation ───────────────────────────────────────
-// Served before Helmet so the CDN-powered Swagger UI can load its assets.
-app.get("/api-docs/openapi.json", (req, res) => {
-  res.status(200).json(openApiDocument);
-});
-
-app.get(["/api-docs", "/api-docs/"], (req, res) => {
-  res.type("html").send(`<!doctype html>
+// ── Swagger / OpenAPI documentation helper ────────────────────────────────
+// Helper function to generate API docs HTML
+const generateApiDocsHTML = (openApiJsonPath) => `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -54,7 +49,7 @@ app.get(["/api-docs", "/api-docs/"], (req, res) => {
     <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
     <script>
       window.ui = SwaggerUIBundle({
-        url: "/api-docs/openapi.json",
+        url: "${openApiJsonPath}",
         dom_id: "#swagger-ui",
         deepLinking: true,
         persistAuthorization: true,
@@ -62,7 +57,24 @@ app.get(["/api-docs", "/api-docs/"], (req, res) => {
       });
     </script>
   </body>
-</html>`);
+</html>`;
+
+// Serve API docs at root level (for direct backend access)
+app.get("/api-docs/openapi.json", (req, res) => {
+  res.status(200).json(openApiDocument);
+});
+
+app.get(["/api-docs", "/api-docs/"], (req, res) => {
+  res.type("html").send(generateApiDocsHTML("/api-docs/openapi.json"));
+});
+
+// Serve API docs under /api/v1 (for frontend proxy access)
+app.get("/api/v1/docs/openapi.json", (req, res) => {
+  res.status(200).json(openApiDocument);
+});
+
+app.get(["/api/v1/docs", "/api/v1/docs/"], (req, res) => {
+  res.type("html").send(generateApiDocsHTML("/api/v1/docs/openapi.json"));
 });
 
 // ── Security middleware ────────────────────────────────────────────────────

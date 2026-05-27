@@ -28,7 +28,7 @@ const payrollRoutes = require("./routes/payroll.routes");
 const app = express();
 
 // Trust proxy for rate limiting (needed for Render/Heroku/Vercel)
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 // ── Swagger / OpenAPI documentation helper ────────────────────────────────
 // Helper function to generate API docs HTML

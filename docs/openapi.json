@@ -1,0 +1,2503 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Employee Onboarding HRMS API",
+    "version": "1.0.0",
+    "description": "Swagger/OpenAPI documentation for the Employee Onboarding HRMS backend. Most endpoints return `{ status, message?, data? }` and protected routes require a JWT bearer token."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local backend"
+    },
+    {
+      "url": "https://bitbyte-backend.onrender.com",
+      "description": "Deployed backend"
+    }
+  ],
+  "tags": [
+    { "name": "Health" },
+    { "name": "Auth" },
+    { "name": "Employee" },
+    { "name": "Admin" },
+    { "name": "Super Admin" },
+    { "name": "Dashboard" },
+    { "name": "Users" },
+    { "name": "Attendance" },
+    { "name": "Leaves" },
+    { "name": "Payroll" },
+    { "name": "Notifications" }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Root backend status",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Backend status text",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Backend is live"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service health",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "environment": { "type": "string", "example": "development" },
+                    "timestamp": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login with email and password",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/AuthSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register an employee or intern",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterUserRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/UserSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "patch": {
+        "tags": ["Auth"],
+        "summary": "Reset the current user's password",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ResetPasswordRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/TokenSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Get the authenticated user",
+        "responses": {
+          "200": { "$ref": "#/components/responses/UserSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/employee/profile": {
+      "get": {
+        "tags": ["Employee"],
+        "summary": "Get the current employee profile and documents",
+        "description": "Roles: employee, intern.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileWithDocumentsSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/employee/status": {
+      "get": {
+        "tags": ["Employee"],
+        "summary": "Get the current employee onboarding status",
+        "description": "Roles: employee, intern.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/employee/audit-trail": {
+      "get": {
+        "tags": ["Employee"],
+        "summary": "Get verification audit trail for the current employee",
+        "description": "Roles: employee, intern.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/LogsSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/employee/draft/{section}": {
+      "post": {
+        "tags": ["Employee"],
+        "summary": "Save a draft onboarding section",
+        "description": "Roles: employee, intern. Draft payload is intentionally flexible.",
+        "parameters": [
+          { "$ref": "#/components/parameters/SectionParam" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/employee/draft": {
+      "get": {
+        "tags": ["Employee"],
+        "summary": "Get the current employee draft profile",
+        "description": "Roles: employee, intern.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/employee/personal": {
+      "put": {
+        "tags": ["Employee"],
+        "summary": "Save personal details",
+        "description": "Roles: employee, intern.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PersonalDetailsRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/employee/education": {
+      "put": {
+        "tags": ["Employee"],
+        "summary": "Save education details",
+        "description": "Roles: employee, intern.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EducationDetailsRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/employee/career": {
+      "put": {
+        "tags": ["Employee"],
+        "summary": "Save career details",
+        "description": "Roles: employee, intern.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CareerDetailsRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/employee/bank": {
+      "put": {
+        "tags": ["Employee"],
+        "summary": "Save bank details",
+        "description": "Roles: employee, intern.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BankDetailsRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/employee/documents": {
+      "post": {
+        "tags": ["Employee"],
+        "summary": "Upload employee documents",
+        "description": "Roles: employee, intern. Multipart fields: aadhaar, pan, passbook, passport, resume.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": { "$ref": "#/components/schemas/DocumentUploadRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileWithDocumentsSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/employee/submit/{section}": {
+      "patch": {
+        "tags": ["Employee"],
+        "summary": "Submit an onboarding section for review",
+        "description": "Roles: employee, intern.",
+        "parameters": [
+          { "$ref": "#/components/parameters/SectionParam" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/employee/update-department": {
+      "put": {
+        "tags": ["Employee"],
+        "summary": "Update employee department",
+        "description": "Roles: admin, super_admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DepartmentUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/employee/update-position": {
+      "put": {
+        "tags": ["Employee"],
+        "summary": "Update employee position",
+        "description": "Roles: admin, super_admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PositionUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/admin/dashboard": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get admin dashboard stats",
+        "description": "Roles: admin.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/admin/me": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get the current admin profile",
+        "description": "Roles: admin.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/UserSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/admin/employees": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List employees for admin review",
+        "description": "Roles: admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/StatusQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" },
+          { "$ref": "#/components/parameters/SearchQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/EmployeeListSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/admin/employees/{profileId}": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get employee detail for admin review",
+        "description": "Roles: admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProfileIdParam" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileWithDocumentsAndLogsSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/admin/employees/{profileId}/verify/{section}": {
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Approve or reject an onboarding section",
+        "description": "Roles: admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProfileIdParam" },
+          { "$ref": "#/components/parameters/SectionParam" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VerificationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/admin/employees/{profileId}/verify-document": {
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Approve or reject a document",
+        "description": "Roles: admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProfileIdParam" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DocumentVerificationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/DocumentsSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/admin/employees/{profileId}/view-document/{docType}": {
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Mark a document as viewed",
+        "description": "Roles: admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProfileIdParam" },
+          { "$ref": "#/components/parameters/DocTypeParam" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/DocumentsSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/admin/employees/{profileId}/forward": {
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Forward an employee profile to super admin",
+        "description": "Roles: admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProfileIdParam" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/super-admin/dashboard": {
+      "get": {
+        "tags": ["Super Admin"],
+        "summary": "Get super admin dashboard stats",
+        "description": "Roles: super_admin.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/super-admin/pending": {
+      "get": {
+        "tags": ["Super Admin"],
+        "summary": "List employees pending final approval",
+        "description": "Roles: super_admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/EmployeeListSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/super-admin/employees": {
+      "get": {
+        "tags": ["Super Admin"],
+        "summary": "List all employee profiles",
+        "description": "Roles: super_admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/StatusQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" },
+          { "$ref": "#/components/parameters/SearchQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/EmployeeListSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/super-admin/employees/{profileId}": {
+      "get": {
+        "tags": ["Super Admin"],
+        "summary": "Get employee detail for final review",
+        "description": "Roles: super_admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProfileIdParam" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/ProfileWithDocumentsAndLogsSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/super-admin/employees/{profileId}/review": {
+      "patch": {
+        "tags": ["Super Admin"],
+        "summary": "Perform final employee approval or rejection",
+        "description": "Roles: super_admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ProfileIdParam" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FinalReviewRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/FinalReviewSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/super-admin/admins": {
+      "get": {
+        "tags": ["Super Admin"],
+        "summary": "List admins",
+        "description": "Roles: super_admin.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/AdminListSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      },
+      "post": {
+        "tags": ["Super Admin"],
+        "summary": "Create an admin, super admin, or intern account",
+        "description": "Roles: super_admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateUserRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/UserSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/super-admin/admins/{adminId}/status": {
+      "patch": {
+        "tags": ["Super Admin"],
+        "summary": "Update admin account status",
+        "description": "Roles: super_admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/AdminIdParam" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StatusUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/AdminSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/dashboard/weekly": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Weekly registrations",
+        "description": "Roles: admin, super_admin.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/dashboard/monthly": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Monthly registrations",
+        "description": "Roles: admin, super_admin.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/dashboard/status-distribution": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Onboarding status distribution",
+        "description": "Roles: admin, super_admin.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/dashboard/summary": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Dashboard summary counts",
+        "description": "Roles: admin, super_admin.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "List users",
+        "description": "Roles: super_admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/RoleQuery" },
+          { "$ref": "#/components/parameters/StatusQuery" },
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/UserListSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/users/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get a user",
+        "description": "Roles: super_admin, admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/IdParam" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/UserSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Soft-delete a user",
+        "description": "Roles: super_admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/IdParam" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/users/{id}/status": {
+      "patch": {
+        "tags": ["Users"],
+        "summary": "Update user account status",
+        "description": "Roles: super_admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/IdParam" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StatusUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/UserSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/attendance/google-sheet": {
+      "get": {
+        "tags": ["Attendance"],
+        "summary": "Read attendance from Google Sheets",
+        "description": "Roles: admin, super_admin.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "sheet",
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "refresh",
+            "in": "query",
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1 }
+          }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/attendance/today": {
+      "get": {
+        "tags": ["Attendance"],
+        "summary": "Get today's attendance",
+        "description": "Roles: admin, super_admin.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/attendance/check-in": {
+      "post": {
+        "tags": ["Attendance"],
+        "summary": "Check in an employee",
+        "description": "Roles: admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AttendanceActionRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/GenericSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/attendance/check-out": {
+      "post": {
+        "tags": ["Attendance"],
+        "summary": "Check out an employee",
+        "description": "Roles: admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AttendanceActionRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/attendance/absent": {
+      "post": {
+        "tags": ["Attendance"],
+        "summary": "Mark an employee absent",
+        "description": "Roles: admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AttendanceActionRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/GenericSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/leaves/all": {
+      "get": {
+        "tags": ["Leaves"],
+        "summary": "List leave balances for employees",
+        "description": "Roles: admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/YearQuery" },
+          {
+            "name": "department",
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          { "$ref": "#/components/parameters/SearchQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/leaves/requests": {
+      "get": {
+        "tags": ["Leaves"],
+        "summary": "List leave requests",
+        "description": "Admins see all matching requests; employees and interns see their own when using /my-requests.",
+        "parameters": [
+          { "$ref": "#/components/parameters/YearQuery" },
+          { "$ref": "#/components/parameters/StatusQuery" },
+          {
+            "name": "employeeId",
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/LeaveRequestsSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/leaves/me": {
+      "get": {
+        "tags": ["Leaves"],
+        "summary": "Get the current employee's leave balance",
+        "description": "Roles: employee, intern.",
+        "parameters": [
+          { "$ref": "#/components/parameters/YearQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/leaves/my-requests": {
+      "get": {
+        "tags": ["Leaves"],
+        "summary": "List leave requests for the current employee",
+        "description": "Roles: employee, intern.",
+        "parameters": [
+          { "$ref": "#/components/parameters/YearQuery" },
+          { "$ref": "#/components/parameters/StatusQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/LeaveRequestsSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/leaves/{employeeId}": {
+      "get": {
+        "tags": ["Leaves"],
+        "summary": "Get leave balance for one employee",
+        "description": "Roles: admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/EmployeeIdParam" },
+          { "$ref": "#/components/parameters/YearQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/leaves/allocate": {
+      "post": {
+        "tags": ["Leaves"],
+        "summary": "Allocate or adjust leave balances",
+        "description": "Roles: admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LeaveAllocationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/leaves/mark": {
+      "post": {
+        "tags": ["Leaves"],
+        "summary": "Mark leave for an employee",
+        "description": "Roles: admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LeaveMarkRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/GenericSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/leaves/request": {
+      "post": {
+        "tags": ["Leaves"],
+        "summary": "Create a leave request",
+        "description": "Roles: admin, employee, intern.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LeaveRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/GenericSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/leaves/approve": {
+      "put": {
+        "tags": ["Leaves"],
+        "summary": "Approve a leave request",
+        "description": "Roles: admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LeaveDecisionRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/leaves/reject": {
+      "put": {
+        "tags": ["Leaves"],
+        "summary": "Reject a leave request",
+        "description": "Roles: admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LeaveRejectRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/leaves/comp-off": {
+      "post": {
+        "tags": ["Leaves"],
+        "summary": "Grant compensatory off",
+        "description": "Roles: admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CompOffGrantRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/GenericSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "List current user notifications",
+        "responses": {
+          "200": { "$ref": "#/components/responses/NotificationsSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "patch": {
+        "tags": ["Notifications"],
+        "summary": "Mark a notification as read",
+        "description": "Current implementation deletes the notification after viewing.",
+        "parameters": [
+          { "$ref": "#/components/parameters/IdParam" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/notifications/manual": {
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Create a manual/test notification",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ManualNotificationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/NotificationSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/payroll/employees": {
+      "get": {
+        "tags": ["Payroll"],
+        "summary": "Search employees for payroll",
+        "description": "Roles: admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/PayrollEmployeesSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/payroll/analytics": {
+      "get": {
+        "tags": ["Payroll"],
+        "summary": "Get payroll analytics",
+        "description": "Roles: admin, super_admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PayPeriodQuery" },
+          {
+            "name": "department",
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          { "$ref": "#/components/parameters/StatusQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/payroll/create": {
+      "post": {
+        "tags": ["Payroll"],
+        "summary": "Create payroll and generate payslip",
+        "description": "Roles: admin.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PayrollCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/PayrollSuccess" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/payroll/all": {
+      "get": {
+        "tags": ["Payroll"],
+        "summary": "List payroll records",
+        "description": "Roles: admin, super_admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/PageQuery" },
+          { "$ref": "#/components/parameters/LimitQuery" },
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/PayPeriodQuery" },
+          {
+            "name": "department",
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          { "$ref": "#/components/parameters/StatusQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/PayrollListSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/payroll/me": {
+      "get": {
+        "tags": ["Payroll"],
+        "summary": "List payroll records for current employee",
+        "description": "Roles: employee, intern.",
+        "responses": {
+          "200": { "$ref": "#/components/responses/PayrollRecordsSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/payroll/payslip/{id}": {
+      "get": {
+        "tags": ["Payroll"],
+        "summary": "Get a payslip payload",
+        "description": "Roles: admin, super_admin, employee, intern.",
+        "parameters": [
+          { "$ref": "#/components/parameters/IdParam" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/PayslipSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/payroll/{employeeId}": {
+      "get": {
+        "tags": ["Payroll"],
+        "summary": "List payroll records for an employee",
+        "description": "Roles: admin, super_admin, employee, intern.",
+        "parameters": [
+          { "$ref": "#/components/parameters/EmployeeIdParam" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/PayrollRecordsSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Payroll"],
+        "summary": "Delete a payroll record",
+        "description": "Roles: admin.",
+        "parameters": [
+          { "$ref": "#/components/parameters/IdParam" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/GenericSuccess" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
+      "IdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" }
+      },
+      "ProfileIdParam": {
+        "name": "profileId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "pattern": "^[a-fA-F0-9]{24}$" }
+      },
+      "EmployeeIdParam": {
+        "name": "employeeId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" }
+      },
+      "AdminIdParam": {
+        "name": "adminId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "pattern": "^[a-fA-F0-9]{24}$" }
+      },
+      "SectionParam": {
+        "name": "section",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "enum": ["personal", "education", "career", "bank", "documents"]
+        }
+      },
+      "DocTypeParam": {
+        "name": "docType",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "enum": ["aadhaar", "pan", "passbook", "passport", "resume"]
+        }
+      },
+      "PageQuery": {
+        "name": "page",
+        "in": "query",
+        "schema": { "type": "integer", "minimum": 1, "default": 1 }
+      },
+      "LimitQuery": {
+        "name": "limit",
+        "in": "query",
+        "schema": { "type": "integer", "minimum": 1, "default": 20 }
+      },
+      "SearchQuery": {
+        "name": "search",
+        "in": "query",
+        "schema": { "type": "string" }
+      },
+      "StatusQuery": {
+        "name": "status",
+        "in": "query",
+        "schema": { "type": "string" }
+      },
+      "RoleQuery": {
+        "name": "role",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": ["employee", "admin", "super_admin", "intern"]
+        }
+      },
+      "YearQuery": {
+        "name": "year",
+        "in": "query",
+        "schema": { "type": "integer", "minimum": 2020, "maximum": 2100 }
+      },
+      "PayPeriodQuery": {
+        "name": "payPeriod",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+          "example": "2026-05"
+        }
+      }
+    },
+    "responses": {
+      "GenericSuccess": {
+        "description": "Successful response",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiResponse" }
+          }
+        }
+      },
+      "AuthSuccess": {
+        "description": "Authenticated successfully",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": { "type": "string" },
+                        "user": { "$ref": "#/components/schemas/User" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "TokenSuccess": {
+        "description": "Token response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "UserSuccess": {
+        "description": "User response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": { "$ref": "#/components/schemas/User" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "UserListSuccess": {
+        "description": "Users list response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "users": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/User" }
+                        },
+                        "pagination": { "$ref": "#/components/schemas/Pagination" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "AdminListSuccess": {
+        "description": "Admins list response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "admins": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/User" }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "AdminSuccess": {
+        "description": "Admin response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "admin": { "$ref": "#/components/schemas/User" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ProfileSuccess": {
+        "description": "Employee profile response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "profile": { "$ref": "#/components/schemas/EmployeeProfile" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ProfileWithDocumentsSuccess": {
+        "description": "Employee profile and documents response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "profile": { "$ref": "#/components/schemas/EmployeeProfile" },
+                        "documents": { "$ref": "#/components/schemas/Documents" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ProfileWithDocumentsAndLogsSuccess": {
+        "description": "Employee profile, documents, and verification logs response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "profile": { "$ref": "#/components/schemas/EmployeeProfile" },
+                        "documents": { "$ref": "#/components/schemas/Documents" },
+                        "logs": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/VerificationLog" }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "EmployeeListSuccess": {
+        "description": "Employee list response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "employees": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/EmployeeProfile" }
+                        },
+                        "pagination": { "$ref": "#/components/schemas/Pagination" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "DocumentsSuccess": {
+        "description": "Documents response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "documents": { "$ref": "#/components/schemas/Documents" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "LogsSuccess": {
+        "description": "Verification logs response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "logs": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/VerificationLog" }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "FinalReviewSuccess": {
+        "description": "Final review response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "profile": { "$ref": "#/components/schemas/EmployeeProfile" },
+                        "employeeId": { "type": "string", "example": "EMP-2026-0001" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "LeaveRequestsSuccess": {
+        "description": "Leave requests response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "requests": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/LeaveRequestRecord" }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "NotificationsSuccess": {
+        "description": "Notifications response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "notifications": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/Notification" }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "NotificationSuccess": {
+        "description": "Notification response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "notification": { "$ref": "#/components/schemas/Notification" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "PayrollEmployeesSuccess": {
+        "description": "Payroll employee options response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "employees": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/PayrollEmployeeOption" }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "PayrollSuccess": {
+        "description": "Payroll response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "payroll": { "$ref": "#/components/schemas/PayrollRecord" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "PayrollListSuccess": {
+        "description": "Payroll list response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "records": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/PayrollRecord" }
+                        },
+                        "analytics": { "$ref": "#/components/schemas/PayrollAnalytics" },
+                        "pagination": { "$ref": "#/components/schemas/Pagination" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "PayrollRecordsSuccess": {
+        "description": "Payroll records response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "records": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/PayrollRecord" }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "PayslipSuccess": {
+        "description": "Payslip response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/ApiResponse" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "payslip": { "$ref": "#/components/schemas/PayslipPayload" }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ValidationError" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid JWT",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Role or first-login access denied",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "success" },
+          "message": { "type": "string" },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "fail" },
+          "message": { "type": "string" },
+          "code": { "type": "string" }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string", "example": "Validation error" },
+          "errors": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer", "example": 1 },
+          "limit": { "type": "integer", "example": 20 },
+          "total": { "type": "integer", "example": 100 },
+          "pages": { "type": "integer", "example": 5 }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "firstName": { "type": "string" },
+          "lastName": { "type": "string" },
+          "role": {
+            "type": "string",
+            "enum": ["employee", "admin", "super_admin", "intern"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "suspended"]
+          },
+          "firstLogin": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": true
+      },
+      "EmployeeProfile": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "userId": { "type": "string" },
+          "employeeId": { "type": "string", "example": "EMP-2026-0001" },
+          "firstName": { "type": "string" },
+          "lastName": { "type": "string" },
+          "department": { "type": "string" },
+          "position": { "type": "string", "enum": ["Intern", "Full-time"] },
+          "overallStatus": {
+            "type": "string",
+            "example": "under_review"
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": true
+      },
+      "Documents": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "userId": { "type": "string" },
+          "aadhaar": { "$ref": "#/components/schemas/DocumentFile" },
+          "pan": { "$ref": "#/components/schemas/DocumentFile" },
+          "passbook": { "$ref": "#/components/schemas/DocumentFile" },
+          "passport": { "$ref": "#/components/schemas/DocumentFile" },
+          "resume": { "$ref": "#/components/schemas/DocumentFile" }
+        },
+        "additionalProperties": true
+      },
+      "DocumentFile": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "format": "uri" },
+          "publicId": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"]
+          },
+          "viewed": { "type": "boolean" },
+          "comments": { "type": "string" }
+        },
+        "additionalProperties": true
+      },
+      "VerificationLog": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "profileId": { "type": "string" },
+          "section": { "type": "string" },
+          "action": { "type": "string" },
+          "comments": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": true
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email", "example": "admin@example.com" },
+          "password": { "type": "string", "minLength": 6, "format": "password" }
+        }
+      },
+      "RegisterUserRequest": {
+        "type": "object",
+        "required": ["email", "firstName", "lastName"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "firstName": { "type": "string", "minLength": 2, "maxLength": 50, "pattern": "^[A-Za-z ]+$" },
+          "lastName": { "type": "string", "minLength": 2, "maxLength": 50, "pattern": "^[A-Za-z ]+$" },
+          "role": {
+            "type": "string",
+            "enum": ["employee", "admin", "super_admin", "intern"],
+            "default": "employee"
+          }
+        }
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "required": ["currentPassword", "newPassword", "confirmPassword"],
+        "properties": {
+          "currentPassword": { "type": "string", "format": "password" },
+          "newPassword": {
+            "type": "string",
+            "minLength": 8,
+            "format": "password",
+            "description": "Must include uppercase, lowercase, number, and special character."
+          },
+          "confirmPassword": { "type": "string", "format": "password" }
+        }
+      },
+      "Address": {
+        "type": "object",
+        "required": ["houseNo", "street", "city", "state", "pincode"],
+        "properties": {
+          "houseNo": { "type": "string" },
+          "flatName": { "type": "string" },
+          "street": { "type": "string" },
+          "city": { "type": "string" },
+          "state": { "type": "string" },
+          "pincode": { "type": "string", "pattern": "^\\d{6}$" },
+          "country": { "type": "string", "default": "India" }
+        }
+      },
+      "PersonalDetailsRequest": {
+        "type": "object",
+        "required": [
+          "firstName",
+          "lastName",
+          "dateOfBirth",
+          "gender",
+          "bloodGroup",
+          "mobile",
+          "aadhaarNumber",
+          "panNumber",
+          "address",
+          "permanentAddress",
+          "emergencyContact"
+        ],
+        "properties": {
+          "firstName": { "type": "string", "pattern": "^[A-Za-z ]+$" },
+          "lastName": { "type": "string", "pattern": "^[A-Za-z ]+$" },
+          "dateOfBirth": { "type": "string", "format": "date" },
+          "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+          "bloodGroup": { "type": "string", "enum": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] },
+          "mobile": { "type": "string", "pattern": "^\\d{10}$" },
+          "alternatePhone": { "type": "string", "pattern": "^\\d{10}$" },
+          "aadhaarNumber": { "type": "string", "pattern": "^\\d{12}$" },
+          "panNumber": { "type": "string", "pattern": "^[A-Z]{5}[0-9]{4}[A-Z]{1}$" },
+          "address": { "$ref": "#/components/schemas/Address" },
+          "permanentAddress": { "$ref": "#/components/schemas/Address" },
+          "sameAsCurrent": { "type": "boolean", "default": false },
+          "emergencyContact": {
+            "type": "object",
+            "required": ["name", "relationship", "mobile"],
+            "properties": {
+              "name": { "type": "string", "pattern": "^[A-Za-z ]+$" },
+              "relationship": { "type": "string", "enum": ["Parent", "Guardian", "Friend"] },
+              "mobile": { "type": "string", "pattern": "^\\d{10}$" }
+            }
+          }
+        }
+      },
+      "EducationDetailsRequest": {
+        "type": "object",
+        "required": ["education"],
+        "properties": {
+          "education": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/components/schemas/EducationEntry" }
+          }
+        }
+      },
+      "EducationEntry": {
+        "type": "object",
+        "required": ["level", "institution", "yearOfPassing", "percentage"],
+        "properties": {
+          "level": { "type": "string", "enum": ["SSLC", "HSC", "Diploma", "UG", "PG"] },
+          "degree": { "type": "string", "description": "Required for UG/PG." },
+          "specialization": { "type": "string", "description": "Required for UG/PG." },
+          "institution": { "type": "string" },
+          "yearOfPassing": { "type": "integer", "minimum": 1980 },
+          "percentage": { "type": "number", "minimum": 0, "maximum": 100 }
+        }
+      },
+      "CareerDetailsRequest": {
+        "type": "object",
+        "required": ["appliedPosition", "type", "expectedCTC", "noticePeriod", "skills"],
+        "properties": {
+          "appliedPosition": { "type": "string", "enum": ["Intern", "Full-time"] },
+          "type": { "type": "string", "enum": ["fresher", "experienced"] },
+          "companyName": { "type": "string", "description": "Required when type is experienced." },
+          "position": { "type": "string", "description": "Required when type is experienced." },
+          "previousCTC": { "type": "number", "minimum": 0, "description": "Required when type is experienced." },
+          "expectedCTC": { "type": "number", "minimum": 0 },
+          "noticePeriod": { "type": "string" },
+          "skills": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "uniqueItems": true,
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "BankDetailsRequest": {
+        "type": "object",
+        "required": ["accountHolderName", "accountNumber", "ifscCode", "bankName", "branchName"],
+        "properties": {
+          "accountHolderName": { "type": "string", "pattern": "^[A-Za-z ]+$" },
+          "accountNumber": { "type": "string", "pattern": "^\\d{9,18}$" },
+          "ifscCode": { "type": "string", "pattern": "^[A-Z]{4}0[A-Z0-9]{6}$" },
+          "bankName": { "type": "string", "pattern": "^[A-Za-z ]+$" },
+          "branchName": { "type": "string", "pattern": "^[A-Za-z ]+$" },
+          "accountType": { "type": "string", "enum": ["savings", "current"], "default": "savings" }
+        }
+      },
+      "DocumentUploadRequest": {
+        "type": "object",
+        "properties": {
+          "aadhaar": { "type": "string", "format": "binary" },
+          "pan": { "type": "string", "format": "binary" },
+          "passbook": { "type": "string", "format": "binary" },
+          "passport": { "type": "string", "format": "binary" },
+          "resume": { "type": "string", "format": "binary" }
+        }
+      },
+      "VerificationRequest": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": { "type": "string", "enum": ["approved", "rejected"] },
+          "comments": { "type": "string", "description": "Required with at least 10 characters when rejecting." }
+        }
+      },
+      "DocumentVerificationRequest": {
+        "type": "object",
+        "required": ["docType", "action"],
+        "properties": {
+          "docType": { "type": "string", "enum": ["aadhaar", "pan", "passbook", "passport", "resume"] },
+          "action": { "type": "string", "enum": ["approved", "rejected"] },
+          "comments": { "type": "string", "description": "Required with at least 5 characters when rejecting." }
+        }
+      },
+      "FinalReviewRequest": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": { "type": "string", "enum": ["approved", "rejected"] },
+          "comments": { "type": "string", "description": "Required with at least 10 characters when rejecting." }
+        }
+      },
+      "CreateUserRequest": {
+        "type": "object",
+        "required": ["email", "firstName", "lastName"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "firstName": { "type": "string", "pattern": "^[A-Za-z ]+$", "minLength": 2, "maxLength": 50 },
+          "lastName": { "type": "string", "pattern": "^[A-Za-z ]+$", "minLength": 2, "maxLength": 50 },
+          "role": { "type": "string", "enum": ["admin", "super_admin", "intern"], "default": "admin" }
+        }
+      },
+      "StatusUpdateRequest": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": { "type": "string", "enum": ["active", "inactive", "suspended"] }
+        }
+      },
+      "AttendanceActionRequest": {
+        "type": "object",
+        "required": ["employeeId"],
+        "properties": {
+          "employeeId": { "type": "string", "pattern": "^[a-fA-F0-9]{24}$" }
+        }
+      },
+      "DepartmentUpdateRequest": {
+        "type": "object",
+        "required": ["profileId", "department"],
+        "properties": {
+          "profileId": { "type": "string", "pattern": "^[a-fA-F0-9]{24}$" },
+          "department": { "type": "string", "minLength": 1, "maxLength": 80 }
+        }
+      },
+      "PositionUpdateRequest": {
+        "type": "object",
+        "required": ["profileId", "position"],
+        "properties": {
+          "profileId": { "type": "string", "pattern": "^[a-fA-F0-9]{24}$" },
+          "position": { "type": "string", "enum": ["Intern", "Full-time"] }
+        }
+      },
+      "LeaveBalanceUpdate": {
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "total": { "type": "number", "minimum": 0 },
+          "used": { "type": "number", "minimum": 0 }
+        }
+      },
+      "LeaveAllocationRequest": {
+        "type": "object",
+        "required": ["employeeId", "balances"],
+        "properties": {
+          "employeeId": { "type": "string", "pattern": "^[a-fA-F0-9]{24}$" },
+          "year": { "type": "integer", "minimum": 2020, "maximum": 2100 },
+          "balances": {
+            "type": "object",
+            "minProperties": 1,
+            "properties": {
+              "earnedLeave": { "$ref": "#/components/schemas/LeaveBalanceUpdate" },
+              "casualLeave": { "$ref": "#/components/schemas/LeaveBalanceUpdate" },
+              "sickLeave": { "$ref": "#/components/schemas/LeaveBalanceUpdate" },
+              "maternityLeave": { "$ref": "#/components/schemas/LeaveBalanceUpdate" },
+              "paternityLeave": { "$ref": "#/components/schemas/LeaveBalanceUpdate" }
+            }
+          }
+        }
+      },
+      "LeaveRequest": {
+        "type": "object",
+        "required": ["leaveType", "fromDate", "toDate"],
+        "properties": {
+          "employeeId": { "type": "string", "pattern": "^[a-fA-F0-9]{24}$" },
+          "leaveType": { "$ref": "#/components/schemas/LeaveType" },
+          "fromDate": { "type": "string", "format": "date" },
+          "toDate": { "type": "string", "format": "date" },
+          "days": { "type": "number", "minimum": 0.5 },
+          "reason": { "type": "string", "minLength": 3, "maxLength": 1000 }
+        }
+      },
+      "LeaveMarkRequest": {
+        "allOf": [
+          { "$ref": "#/components/schemas/LeaveRequest" },
+          {
+            "type": "object",
+            "required": ["employeeId"]
+          }
+        ]
+      },
+      "LeaveDecisionRequest": {
+        "type": "object",
+        "required": ["requestId"],
+        "properties": {
+          "requestId": { "type": "string", "pattern": "^[a-fA-F0-9]{24}$" }
+        }
+      },
+      "LeaveRejectRequest": {
+        "type": "object",
+        "required": ["requestId", "rejectionReason"],
+        "properties": {
+          "requestId": { "type": "string", "pattern": "^[a-fA-F0-9]{24}$" },
+          "rejectionReason": { "type": "string", "minLength": 3, "maxLength": 1000 }
+        }
+      },
+      "CompOffGrantRequest": {
+        "type": "object",
+        "required": ["employeeId", "days"],
+        "properties": {
+          "employeeId": { "type": "string", "pattern": "^[a-fA-F0-9]{24}$" },
+          "days": { "type": "number", "minimum": 0.5 },
+          "grantedDate": { "type": "string", "format": "date" },
+          "validityDays": { "type": "integer", "minimum": 1, "maximum": 365 },
+          "reason": { "type": "string", "maxLength": 500 }
+        }
+      },
+      "LeaveType": {
+        "type": "string",
+        "enum": [
+          "earned_leave",
+          "casual_leave",
+          "sick_leave",
+          "maternity_leave",
+          "paternity_leave",
+          "comp_off",
+          "lop"
+        ]
+      },
+      "LeaveRequestRecord": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "employeeId": { "type": "string" },
+          "leaveType": { "$ref": "#/components/schemas/LeaveType" },
+          "fromDate": { "type": "string", "format": "date" },
+          "toDate": { "type": "string", "format": "date" },
+          "days": { "type": "number" },
+          "status": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": true
+      },
+      "ManualNotificationRequest": {
+        "type": "object",
+        "properties": {
+          "recipientId": { "type": "string" },
+          "type": { "type": "string", "default": "test_notification" },
+          "subject": { "type": "string" },
+          "body": { "type": "string" }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "recipientId": { "type": "string" },
+          "type": { "type": "string" },
+          "channel": { "type": "string", "example": "in_app" },
+          "subject": { "type": "string" },
+          "body": { "type": "string" },
+          "status": { "type": "string", "example": "pending" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": true
+      },
+      "SalaryComponent": {
+        "type": "object",
+        "required": ["label", "amount"],
+        "properties": {
+          "key": { "type": "string", "maxLength": 80 },
+          "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "amount": { "type": "number", "minimum": 0 },
+          "formula": { "type": "string", "maxLength": 180 },
+          "systemGenerated": { "type": "boolean" }
+        }
+      },
+      "PayrollCreateRequest": {
+        "type": "object",
+        "required": ["employeeId", "payPeriod", "paidDays", "payDate"],
+        "properties": {
+          "employeeId": { "type": "string", "minLength": 1, "maxLength": 40 },
+          "payPeriod": { "type": "string", "pattern": "^\\d{4}-(0[1-9]|1[0-2])$", "example": "2026-05" },
+          "paidDays": { "type": "number", "minimum": 0, "maximum": 31 },
+          "lopDays": { "type": "number", "minimum": 0, "maximum": 31, "default": 0 },
+          "payDate": { "type": "string", "format": "date" },
+          "fixedSalary": { "type": "number", "exclusiveMinimum": true, "minimum": 0 },
+          "earnings": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SalaryComponent" },
+            "description": "Required with at least one item when fixedSalary is omitted."
+          },
+          "deductions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SalaryComponent" },
+            "default": []
+          }
+        }
+      },
+      "PayrollRecord": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "employeeId": { "type": "string" },
+          "payPeriod": { "type": "string", "example": "2026-05" },
+          "paidDays": { "type": "number" },
+          "lopDays": { "type": "number" },
+          "payDate": { "type": "string", "format": "date" },
+          "earnings": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SalaryComponent" }
+          },
+          "deductions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SalaryComponent" }
+          },
+          "grossPay": { "type": "number" },
+          "netPay": { "type": "number" },
+          "status": { "type": "string" }
+        },
+        "additionalProperties": true
+      },
+      "PayrollEmployeeOption": {
+        "type": "object",
+        "properties": {
+          "employeeId": { "type": "string", "example": "EMP-2026-0001" },
+          "profileId": { "type": "string" },
+          "name": { "type": "string" },
+          "department": { "type": "string" },
+          "position": { "type": "string" }
+        },
+        "additionalProperties": true
+      },
+      "PayrollAnalytics": {
+        "type": "object",
+        "properties": {
+          "totalGross": { "type": "number" },
+          "totalDeductions": { "type": "number" },
+          "totalNet": { "type": "number" },
+          "employeeCount": { "type": "integer" }
+        },
+        "additionalProperties": true
+      },
+      "PayslipPayload": {
+        "type": "object",
+        "properties": {
+          "payroll": { "$ref": "#/components/schemas/PayrollRecord" },
+          "employee": { "$ref": "#/components/schemas/EmployeeProfile" },
+          "company": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  }
+}

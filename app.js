@@ -9,6 +9,7 @@ const compression = require("compression");
 const errorHandler = require("./middlewares/errorHandler");
 const AppError = require("./utils/AppError");
 const logger = require("./utils/logger");
+const openApiDocument = require("./docs/openapi.json");
 
 // Root Route
 
@@ -28,6 +29,41 @@ const app = express();
 
 // Trust proxy for rate limiting (needed for Render/Heroku/Vercel)
 app.set('trust proxy', 1);
+
+// ── Swagger / OpenAPI documentation ───────────────────────────────────────
+// Served before Helmet so the CDN-powered Swagger UI can load its assets.
+app.get("/api-docs/openapi.json", (req, res) => {
+  res.status(200).json(openApiDocument);
+});
+
+app.get(["/api-docs", "/api-docs/"], (req, res) => {
+  res.type("html").send(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Employee Onboarding HRMS API Docs</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+    <style>
+      body { margin: 0; background: #f6f8fa; }
+      .swagger-ui .topbar { display: none; }
+    </style>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+      window.ui = SwaggerUIBundle({
+        url: "/api-docs/openapi.json",
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        persistAuthorization: true,
+        displayRequestDuration: true
+      });
+    </script>
+  </body>
+</html>`);
+});
 
 // ── Security middleware ────────────────────────────────────────────────────
 app.use(helmet());

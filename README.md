@@ -1,6 +1,19 @@
 # bitbyte-backend
 # HRMS-backend
 
+## Swagger API Documentation
+
+The backend serves Swagger UI and the raw OpenAPI spec without extra npm
+dependencies:
+
+```http
+GET /api-docs
+GET /api-docs/openapi.json
+```
+
+Run the backend and open `http://localhost:5000/api-docs` to browse the API,
+authorize with a JWT bearer token, and test protected endpoints.
+
 ## Google Sheets Attendance
 
 The attendance integration supports two read-only auth modes.

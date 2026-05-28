@@ -6,6 +6,14 @@ const AppError = require("../utils/AppError");
 
 const POSITION_OPTIONS = ["Intern", "Full-time"];
 
+const normalizeName = (value = "") =>
+  String(value)
+    .replace(/[^A-Za-z ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
 const assertSectionEditable = (profile, section) => {
   const status = profile.verificationStatus[section]?.status;
   if (status === "approved") {
@@ -47,6 +55,7 @@ const requiredSectionPaths = {
     "address.street",
     "address.city",
     "address.state",
+    "address.district",
     "address.pincode",
     "emergencyContact.name",
     "emergencyContact.relationship",
@@ -166,6 +175,8 @@ class EmployeeProfileService {
 
     // Uppercase PAN before storing
     if (data.panNumber) data.panNumber = data.panNumber.toUpperCase();
+    if (data.firstName) data.firstName = normalizeName(data.firstName);
+    if (data.lastName) data.lastName = normalizeName(data.lastName);
 
     profile.personalDetails = {
       ...(profile.personalDetails.toObject?.() || profile.personalDetails),
@@ -242,6 +253,29 @@ class EmployeeProfileService {
     if (!profile) throw new AppError("Profile not found", 404);
 
     profile.position = position;
+    await profile.save();
+    return profile;
+  }
+
+  async updateFixedPay(profileId, fixedPay, adminUser) {
+    if (!Number.isFinite(Number(fixedPay)) || Number(fixedPay) <= 0) {
+      throw new AppError("Fixed pay must be greater than zero.", 400);
+    }
+
+    const profile = await EmployeeProfile.findById(profileId);
+    if (!profile) throw new AppError("Profile not found", 404);
+
+    profile.fixedPay = {
+      ...(profile.fixedPay?.toObject?.() || profile.fixedPay || {}),
+      amount: Number(fixedPay),
+      status: "pending",
+      proposedBy: adminUser._id,
+      proposedAt: new Date(),
+      approvedBy: undefined,
+      approvedAt: undefined,
+      comments: "",
+    };
+
     await profile.save();
     return profile;
   }
@@ -330,6 +364,7 @@ class EmployeeProfileService {
         ["aadhaar", "Aadhaar"],
         ["pan", "PAN"],
         ["passbook", "Passbook"],
+        ["resume", "Resume"],
       ].filter(([field]) => !docs?.[field]?.fileUrl);
 
       if (!docs || missingDocs.length) {

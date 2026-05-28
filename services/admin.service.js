@@ -127,6 +127,8 @@ class AdminService {
     const profile = await EmployeeProfile.findById(profileId)
       .populate('userId', 'email firstName lastName status createdAt lastLogin')
       .populate('forwardedBy', 'firstName lastName email')
+      .populate('fixedPay.proposedBy', 'firstName lastName role')
+      .populate('fixedPay.approvedBy', 'firstName lastName role')
       .lean();
 
     if (!profile) throw new AppError('Employee profile not found', 404);
@@ -325,6 +327,9 @@ class AdminService {
     }
     if (!profile.department || !profile.position) {
       throw new AppError('Assign department and position before forwarding to Super Admin.', 400);
+    }
+    if (!profile.fixedPay?.amount) {
+      throw new AppError('Propose fixed pay before forwarding to Super Admin.', 400);
     }
     if (!['admin_approved', 'under_review'].includes(profile.overallStatus)) {
       throw new AppError(`Cannot forward. Current status: ${profile.overallStatus}`, 400);

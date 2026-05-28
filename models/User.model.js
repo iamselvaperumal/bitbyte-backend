@@ -56,8 +56,18 @@ userSchema.virtual('fullName').get(function () {
   return `${this.firstName || ''} ${this.lastName || ''}`.trim();
 });
 
+const normalizeName = (value = '') =>
+  String(value)
+    .replace(/[^A-Za-z ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
 // Pre-save hook: hash password
 userSchema.pre('save', async function (next) {
+  if (this.isModified('firstName') && this.firstName) this.firstName = normalizeName(this.firstName);
+  if (this.isModified('lastName') && this.lastName) this.lastName = normalizeName(this.lastName);
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
   if (!this.isNew) this.passwordChangedAt = new Date();

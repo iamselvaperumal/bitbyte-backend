@@ -25,6 +25,14 @@ const generateTempPassword = () => {
   return pwd.split('').sort(() => 0.5 - Math.random()).join('');
 };
 
+const normalizeName = (value = '') =>
+  String(value)
+    .replace(/[^A-Za-z ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
 class AuthService {
   async login(email, password) {
     const user = await User.findOne({ email }).select('+password');
@@ -44,7 +52,9 @@ class AuthService {
   // FIX: role is now explicitly passed — no longer hardcoded to 'employee'
   // This fixes the bug where admins were created with role='employee'
   async registerUser(data, createdBy) {
-    const { email, firstName, lastName, role = 'employee' } = data;
+    const { email, role = 'employee' } = data;
+    const firstName = normalizeName(data.firstName);
+    const lastName = normalizeName(data.lastName);
 
     const existing = await User.findOne({ email });
     if (existing) throw new AppError('An account with this email already exists', 409);
@@ -64,7 +74,10 @@ class AuthService {
 
     // Only create an EmployeeProfile for employees and interns
     if (role === 'employee' || role === 'intern') {
-      await EmployeeProfile.create({ userId: user._id });
+      await EmployeeProfile.create({
+        userId: user._id,
+        appliedPosition: role === 'intern' ? 'Intern' : 'Full-time',
+      });
     }
 
     const notification = await Notification.create({

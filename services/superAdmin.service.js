@@ -21,6 +21,7 @@ class SuperAdminService {
     const employees = await EmployeeProfile.find(query)
       .populate('userId',      'email firstName lastName createdAt')
       .populate('forwardedBy', 'firstName lastName email')
+      .populate('fixedPay.proposedBy', 'firstName lastName role')
       .sort({ forwardedAt: 1 })
       .skip((page - 1) * Number(limit))
       .limit(Number(limit))
@@ -82,6 +83,9 @@ class SuperAdminService {
     const profile = await EmployeeProfile.findById(profileId)
       .populate('userId',      'email firstName lastName status createdAt')
       .populate('forwardedBy', 'firstName lastName email')
+      .populate('superAdminReview.reviewedBy', 'firstName lastName role')
+      .populate('fixedPay.proposedBy', 'firstName lastName role')
+      .populate('fixedPay.approvedBy', 'firstName lastName role')
       .lean();
     if (!profile) throw new AppError('Profile not found', 404);
 
@@ -110,7 +114,11 @@ class SuperAdminService {
     if (action === 'approved' && (!profile.department || !profile.position)) {
       throw new AppError('Department and position must be assigned before final approval.', 400);
     }
+    if (action === 'approved' && !profile.fixedPay?.amount) {
+      throw new AppError('Fixed pay must be proposed before final approval.', 400);
+    }
 
+    const previousStatus = profile.overallStatus;
     profile.superAdminReview = {
       reviewedBy: superAdminUser._id,
       reviewedAt: new Date(),
@@ -124,12 +132,15 @@ class SuperAdminService {
       employeeId         = await EmployeeProfile.generateEmployeeId();
       profile.employeeId = employeeId;
       profile.overallStatus = 'approved';
+      profile.fixedPay.status = 'approved';
+      profile.fixedPay.approvedBy = superAdminUser._id;
+      profile.fixedPay.approvedAt = new Date();
 
       await VerificationLog.create({
         employeeId:        profile.userId._id,
         employeeProfileId: profile._id,
         section:  'overall', action: 'final_approved',
-        previousStatus: profile.overallStatus, newStatus: 'approved',
+        previousStatus, newStatus: 'approved',
         comments, verifiedBy: superAdminUser._id, verifierRole: 'super_admin',
         metadata: { employeeId },
       });
@@ -143,12 +154,16 @@ class SuperAdminService {
         .catch((err) => logger.error(`Final approval in-app notification failed: ${err.message}`));
     } else {
       profile.overallStatus = 'rejected';
+      if (profile.fixedPay?.amount) {
+        profile.fixedPay.status = 'rejected';
+        profile.fixedPay.comments = comments || '';
+      }
 
       await VerificationLog.create({
         employeeId:        profile.userId._id,
         employeeProfileId: profile._id,
         section:  'overall', action: 'final_rejected',
-        previousStatus: profile.overallStatus, newStatus: 'rejected',
+        previousStatus, newStatus: 'rejected',
         comments, verifiedBy: superAdminUser._id, verifierRole: 'super_admin',
       });
 

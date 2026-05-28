@@ -36,6 +36,12 @@ router.patch(
   adminController.markDocumentViewed
 );
 
+router.patch(
+  '/employees/:profileId/fixed-pay',
+  validate(schemas.fixedPayUpdate),
+  adminController.updateFixedPay
+);
+
 // Forward to Super Admin
 router.patch('/employees/:profileId/forward', adminController.forwardToSuperAdmin);
 

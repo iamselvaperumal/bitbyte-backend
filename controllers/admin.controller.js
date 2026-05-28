@@ -1,4 +1,5 @@
 const adminService = require('../services/admin.service');
+const employeeService = require('../services/employee.service');
 const catchAsync   = require('../utils/catchAsync');
 
 exports.getEmployeeList = catchAsync(async (req, res) => {
@@ -47,6 +48,19 @@ exports.markDocumentViewed = catchAsync(async (req, res) => {
   const { profileId, docType } = req.params;
   const documents = await adminService.markDocumentViewed(profileId, docType, req.user);
   res.status(200).json({ status: 'success', data: { documents } });
+});
+
+exports.updateFixedPay = catchAsync(async (req, res) => {
+  const profile = await employeeService.updateFixedPay(
+    req.params.profileId,
+    req.body.fixedPay,
+    req.user
+  );
+  res.status(200).json({
+    status: 'success',
+    message: 'Fixed pay sent for Super Admin approval.',
+    data: { profile },
+  });
 });
 
 exports.forwardToSuperAdmin = catchAsync(async (req, res) => {

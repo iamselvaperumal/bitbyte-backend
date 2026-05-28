@@ -52,6 +52,7 @@ class PayrollService {
       email: profile.userId?.email,
       department: profile.department || '',
       position: profile.position || profile.appliedPosition || '',
+      fixedPay: profile.fixedPay?.status === 'approved' ? profile.fixedPay.amount : undefined,
     }));
   }
 

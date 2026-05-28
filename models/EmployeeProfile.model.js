@@ -25,6 +25,7 @@ const addressSchema = new mongoose.Schema(
     street:   { type: String, trim: true },
     city:     { type: String, trim: true },
     state:    { type: String, trim: true },
+    district: { type: String, trim: true },
     pincode:  { type: String, trim: true, match: [/^\d{6}$/, 'Pincode must be exactly 6 digits'] },
     country:  { type: String, trim: true, default: 'India' },
   },
@@ -99,6 +100,7 @@ const educationEntrySchema = new mongoose.Schema(
     university:      { type: String, trim: true }, // Added university field
     yearOfPassing:   { type: Number, min: 1980 },
     percentage:      { type: Number, min: 0, max: 100 },
+    cgpa:            { type: Number, min: 0, max: 10 },
   },
   { _id: true }
 );
@@ -226,6 +228,16 @@ const employeeProfileSchema = new mongoose.Schema(
 
     forwardedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     forwardedAt: { type: Date },
+
+    fixedPay: {
+      amount:     { type: Number, min: 0 },
+      status:     { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+      proposedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      proposedAt: { type: Date },
+      approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      approvedAt: { type: Date },
+      comments:   { type: String, trim: true },
+    },
 
     // ── Soft delete ───────────────────────────────────────────────────────
     isDeleted: { type: Boolean, default: false },

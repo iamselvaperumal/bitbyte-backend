@@ -88,6 +88,7 @@ const addressSchema = Joi.object({
   street:   Joi.string().trim().required().messages({ 'any.required': 'Street is required' }),
   city:     Joi.string().trim().required().messages({ 'any.required': 'City is required' }),
   state:    Joi.string().trim().required().messages({ 'any.required': 'State is required' }),
+  district: Joi.string().trim().required().messages({ 'any.required': 'District is required' }),
   pincode:  Joi.string().pattern(PINCODE_6).required()
     .messages({ 'string.pattern.base': 'Pincode must be exactly 6 digits' }),
   country:  Joi.string().trim().default('India'),
@@ -166,6 +167,8 @@ const educationEntrySchema = Joi.object({
     .messages({ 'number.min': 'Year of passing must be 1980 or later' }),
   percentage: Joi.number().min(0).max(100).required()
     .messages({ 'number.min': 'Percentage cannot be negative' }),
+  cgpa: Joi.number().min(0).max(10).required()
+    .messages({ 'number.min': 'CGPA cannot be negative', 'number.max': 'CGPA must be 10 or less' }),
 });
 
 // ── Education Details (array of entries) ─────────────────────────────────
@@ -315,6 +318,11 @@ const positionUpdateSchema = Joi.object({
     .messages({ 'any.only': 'Position must be Intern or Full-time' }),
 });
 
+const fixedPayUpdateSchema = Joi.object({
+  fixedPay: Joi.number().greater(0).required()
+    .messages({ 'number.greater': 'Fixed pay must be greater than zero' }),
+});
+
 const leaveBalanceUpdateSchema = Joi.object({
   total: Joi.number().min(0).optional(),
   used: Joi.number().min(0).optional(),
@@ -421,6 +429,7 @@ module.exports = {
     attendanceAction:       attendanceActionSchema,
     departmentUpdate:       departmentUpdateSchema,
     positionUpdate:         positionUpdateSchema,
+    fixedPayUpdate:         fixedPayUpdateSchema,
     leaveAllocation:        leaveAllocationSchema,
     leaveMark:              leaveMarkSchema,
     leaveRequest:           leaveRequestSchema,

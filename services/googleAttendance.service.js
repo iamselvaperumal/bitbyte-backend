@@ -3,6 +3,7 @@ const path = require('path');
 const { google } = require('googleapis');
 
 const AppError = require('../utils/AppError');
+const logger = require('../utils/logger');
 
 const SHEETS_READONLY_SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 const DEFAULT_EMPLOYEE_MASTER_SHEET_NAME = 'Employee_Master';
@@ -24,10 +25,10 @@ const headerAliases = {
   department: ['department', 'dept'],
   position: ['position', 'employmentposition', 'employment position', 'role'],
   attendanceDate: ['attendancedate', 'attendance date', 'date', 'day'],
-  shift1CheckIn: ['shift1checkin', 'shift 1 check-in', 'shift 1 check in', 's1checkin', 's1 in'],
-  shift1CheckOut: ['shift1checkout', 'shift 1 check-out', 'shift 1 check out', 's1checkout', 's1 out'],
-  shift2CheckIn: ['shift2checkin', 'shift 2 check-in', 'shift 2 check in', 's2checkin', 's2 in'],
-  shift2CheckOut: ['shift2checkout', 'shift 2 check-out', 'shift 2 check out', 's2checkout', 's2 out'],
+  shift1CheckIn: ['shift1in', 'shift1checkin', 'shift 1 in', 'shift 1 check-in', 'shift 1 check in', 's1checkin', 's1 in'],
+  shift1CheckOut: ['shift1out', 'shift1checkout', 'shift 1 out', 'shift 1 check-out', 'shift 1 check out', 's1checkout', 's1 out'],
+  shift2CheckIn: ['shift2in', 'shift2checkin', 'shift 2 in', 'shift 2 check-in', 'shift 2 check in', 's2checkin', 's2 in'],
+  shift2CheckOut: ['shift2out', 'shift2checkout', 'shift 2 out', 'shift 2 check-out', 'shift 2 check out', 's2checkout', 's2 out'],
   onDutyStatus: ['ondutystatus', 'on duty status', 'onduty', 'on duty', 'od', 'duty status'],
 };
 
@@ -58,6 +59,10 @@ const findColumnIndex = (headers, key) => {
 };
 
 const getCell = (row, index) => (index >= 0 ? normalizeCell(row[index]) : '');
+
+const debugGoogleAttendance = (message, payload) => {
+  logger.debug(`[GoogleAttendance] ${message}: ${JSON.stringify(payload)}`);
+};
 
 const isEmptyValue = (value) => {
   const normalized = normalizeCell(value).toLowerCase();
@@ -230,7 +235,18 @@ const setCachedResult = (cacheKey, value) => {
   });
 };
 
-const hasShiftTime = ({ checkIn, checkOut }) => !isEmptyValue(checkIn) || !isEmptyValue(checkOut);
+const isValidTimeValue = (value) => {
+  const text = normalizeCell(value);
+  if (isEmptyValue(text)) return false;
+
+  if (/^(?:[01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(text)) return true;
+  if (/^(?:0?\d|1[0-2])(?::[0-5]\d)?\s*(?:am|pm)$/i.test(text)) return true;
+
+  const parsed = new Date(text);
+  return !Number.isNaN(parsed.getTime()) && /\d{4}-\d{1,2}-\d{1,2}|T/.test(text);
+};
+
+const hasShiftTime = ({ checkIn, checkOut }) => isValidTimeValue(checkIn) || isValidTimeValue(checkOut);
 
 const getOnDutyShiftScope = (value) => {
   const text = normalizeCell(value).toLowerCase();
@@ -418,6 +434,9 @@ const parseAttendanceLog = (values, requestedDate, recordLimit) => {
   }
 
   const [headers, ...dataRows] = values;
+  debugGoogleAttendance('Attendance_Log raw headers', headers);
+  debugGoogleAttendance('Attendance_Log raw rows', dataRows);
+
   const indexes = {
     employeeId: getRequiredIndex(headers, 'employeeId', 'Attendance_Log', 'Emp ID'),
     attendanceDate: getRequiredIndex(headers, 'attendanceDate', 'Attendance_Log', 'Attendance Date'),
@@ -427,6 +446,13 @@ const parseAttendanceLog = (values, requestedDate, recordLimit) => {
     shift2CheckOut: findColumnIndex(headers, 'shift2CheckOut'),
     onDutyStatus: findColumnIndex(headers, 'onDutyStatus'),
   };
+  debugGoogleAttendance('Attendance_Log resolved column indexes', {
+    headers,
+    indexes,
+    mappedColumns: Object.fromEntries(
+      Object.entries(indexes).map(([key, index]) => [key, index >= 0 ? headers[index] : null])
+    ),
+  });
 
   const logs = [];
   let scannedRows = 0;
@@ -434,6 +460,10 @@ const parseAttendanceLog = (values, requestedDate, recordLimit) => {
   for (let rowIndex = 0; rowIndex < dataRows.length; rowIndex += 1) {
     const row = dataRows[rowIndex];
     scannedRows += 1;
+    debugGoogleAttendance('Attendance_Log raw row', {
+      rowNumber: rowIndex + 2,
+      row,
+    });
 
     const log = {
       employeeId: getCell(row, indexes.employeeId),
@@ -445,6 +475,7 @@ const parseAttendanceLog = (values, requestedDate, recordLimit) => {
       onDutyStatus: getCell(row, indexes.onDutyStatus),
       rowNumber: rowIndex + 2,
     };
+    debugGoogleAttendance('Attendance_Log parsed attendance object', log);
 
     if ([
       log.employeeId,
@@ -477,8 +508,25 @@ const createMissingEmployeeError = (log) => ({
 
 const mapAttendanceLogToRecord = (log, employee) => {
   const calculated = calculateAttendanceStatus(log);
+  debugGoogleAttendance('Shift calculation result', {
+    rowNumber: log.rowNumber,
+    employeeId: log.employeeId,
+    shift1: {
+      checkIn: log.shift1CheckIn,
+      checkOut: log.shift1CheckOut,
+      hasValidTime: hasShiftTime({ checkIn: log.shift1CheckIn, checkOut: log.shift1CheckOut }),
+      result: calculated.shift1Result,
+    },
+    shift2: {
+      checkIn: log.shift2CheckIn,
+      checkOut: log.shift2CheckOut,
+      hasValidTime: hasShiftTime({ checkIn: log.shift2CheckIn, checkOut: log.shift2CheckOut }),
+      result: calculated.shift2Result,
+    },
+    onDutyStatus: log.onDutyStatus,
+  });
 
-  return {
+  const record = {
     employeeId: employee?.employeeId || log.employeeId,
     name: employee?.name || '',
     department: employee?.department || '',
@@ -499,6 +547,15 @@ const mapAttendanceLogToRecord = (log, employee) => {
     rowNumber: log.rowNumber,
     mappingError: employee ? undefined : createMissingEmployeeError(log),
   };
+  debugGoogleAttendance('Final attendance status', {
+    rowNumber: log.rowNumber,
+    employeeId: record.employeeId,
+    shift1Result: record.shift1Result,
+    shift2Result: record.shift2Result,
+    status: record.status,
+  });
+
+  return record;
 };
 
 const mapAttendanceRecords = ({ logs, employeeById }) => {

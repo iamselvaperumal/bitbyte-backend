@@ -391,6 +391,7 @@ const getOnDutyShiftScope = (value) => {
 };
 
 const getShiftResult = (shift, isOnDutyShift) => {
+  // If marked as On Duty
   if (isOnDutyShift) {
     return {
       durationMinutes: null,
@@ -399,15 +400,21 @@ const getShiftResult = (shift, isOnDutyShift) => {
     };
   }
 
+  // Check if both checkIn and checkOut have valid values
+  const checkInValid = !isEmptyValue(shift.checkIn);
+  const checkOutValid = !isEmptyValue(shift.checkOut);
+
+  // Calculate duration only for logging purposes
   const durationMinutes = calculateShiftDurationMinutes(shift);
+  const workedHours = formatDuration(durationMinutes);
+
+  // Shift-based validation: Both checkIn and checkOut must have values
+  const result = checkInValid && checkOutValid ? "P" : "A";
 
   return {
     durationMinutes,
-    workedHours: formatDuration(durationMinutes),
-    result:
-      durationMinutes !== null && durationMinutes >= PRESENT_THRESHOLD_MINUTES
-        ? "P"
-        : "A",
+    workedHours,
+    result,
   };
 };
 
@@ -446,18 +453,18 @@ const calculateAttendanceStatus = (
 
   // Debug logging for attendance calculations
   logger.debug(`[Attendance Calculation] Employee: ${employeeId}`, {
-    shift1Duration: `${shift1.durationMinutes} minutes`,
+    shift1CheckIn: shift1CheckIn,
+    shift1CheckOut: shift1CheckOut,
+    shift1DurationMinutes: shift1.durationMinutes,
+    shift1WorkedHours: shift1.workedHours,
     shift1Result: shift1.result,
-    shift2Duration: `${shift2.durationMinutes} minutes`,
+    shift2CheckIn: shift2CheckIn,
+    shift2CheckOut: shift2CheckOut,
+    shift2DurationMinutes: shift2.durationMinutes,
+    shift2WorkedHours: shift2.workedHours,
     shift2Result: shift2.result,
     overallStatus: status,
-    input: {
-      shift1CheckIn,
-      shift1CheckOut,
-      shift2CheckIn,
-      shift2CheckOut,
-      onDutyStatus,
-    },
+    validationMethod: "Shift-based (checks if check-in and check-out values exist)",
   });
 
   return {

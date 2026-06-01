@@ -38,6 +38,8 @@ exports.getGoogleSheetAttendance = catchAsync(async (req, res) => {
   const result = await googleAttendanceService.getAttendance({
     date: req.query.date,
     sheetName: req.query.sheet,
+    employeeSheetName: req.query.employeeSheet,
+    attendanceSheetName: req.query.attendanceSheet,
     forceRefresh: req.query.refresh === 'true',
     limit: req.query.limit,
   });

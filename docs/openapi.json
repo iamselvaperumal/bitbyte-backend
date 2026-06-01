@@ -785,7 +785,7 @@
       "get": {
         "tags": ["Attendance"],
         "summary": "Read attendance from Google Sheets",
-        "description": "Roles: admin, super_admin.",
+        "description": "Roles: admin, super_admin. Reads Employee_Master and Attendance_Log tabs, joins rows by Emp ID, and computes two-shift attendance status.",
         "parameters": [
           {
             "name": "date",
@@ -794,6 +794,17 @@
           },
           {
             "name": "sheet",
+            "in": "query",
+            "description": "Legacy alias for the attendance log sheet/tab name.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "employeeSheet",
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "attendanceSheet",
             "in": "query",
             "schema": { "type": "string" }
           },

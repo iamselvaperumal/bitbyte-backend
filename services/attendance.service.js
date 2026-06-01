@@ -1,7 +1,7 @@
-const Attendance = require('../models/Attendance.model');
-const EmployeeProfile = require('../models/EmployeeProfile.model');
-const AppError = require('../utils/AppError');
-const logger = require('../utils/logger');
+const Attendance = require("../models/Attendance.model");
+const EmployeeProfile = require("../models/EmployeeProfile.model");
+const AppError = require("../utils/AppError");
+const logger = require("../utils/logger");
 
 const getToday = () => {
   const date = new Date();
@@ -10,18 +10,18 @@ const getToday = () => {
 };
 
 const formatEmployeeName = (user = {}) =>
-  `${user.firstName || ''} ${user.lastName || ''}`.trim();
+  `${user.firstName || ""} ${user.lastName || ""}`.trim();
 
 class AttendanceService {
   async getEmployeeProfile(employeeId) {
     const profile = await EmployeeProfile.findOne({
       _id: employeeId,
       isDeleted: false,
-      overallStatus: 'approved',
-    }).populate('userId', 'firstName lastName email');
+      overallStatus: "approved",
+    }).populate("userId", "firstName lastName email");
 
     if (!profile) {
-      throw new AppError('Approved employee profile not found.', 404);
+      throw new AppError("Approved employee profile not found.", 404);
     }
 
     return profile;
@@ -33,14 +33,17 @@ class AttendanceService {
 
     const existing = await Attendance.findOne({ employeeId, date: today });
     if (existing) {
-      throw new AppError('Attendance already recorded for this employee today.', 400);
+      throw new AppError(
+        "Attendance already recorded for this employee today.",
+        400,
+      );
     }
 
     return Attendance.create({
       employeeId,
       date: today,
       checkInTime: new Date(),
-      status: 'present',
+      status: "present",
       markedBy,
     });
   }
@@ -51,17 +54,20 @@ class AttendanceService {
 
     const attendance = await Attendance.findOne({ employeeId, date: today });
     if (!attendance || !attendance.checkInTime) {
-      throw new AppError('Cannot check out before check-in.', 400);
+      throw new AppError("Cannot check out before check-in.", 400);
     }
-    if (attendance.status === 'completed') {
-      throw new AppError('Check-out has already been completed for today.', 400);
+    if (attendance.status === "completed") {
+      throw new AppError(
+        "Check-out has already been completed for today.",
+        400,
+      );
     }
-    if (attendance.status === 'absent') {
-      throw new AppError('Cannot check out an employee marked absent.', 400);
+    if (attendance.status === "absent") {
+      throw new AppError("Cannot check out an employee marked absent.", 400);
     }
 
     attendance.checkOutTime = new Date();
-    attendance.status = 'completed';
+    attendance.status = "completed";
     attendance.markedBy = markedBy;
     await attendance.save();
     return attendance;
@@ -73,13 +79,16 @@ class AttendanceService {
 
     const existing = await Attendance.findOne({ employeeId, date: today });
     if (existing) {
-      throw new AppError('Attendance already recorded for this employee today.', 400);
+      throw new AppError(
+        "Attendance already recorded for this employee today.",
+        400,
+      );
     }
 
     return Attendance.create({
       employeeId,
       date: today,
-      status: 'absent',
+      status: "absent",
       markedBy,
     });
   }
@@ -88,15 +97,15 @@ class AttendanceService {
     const today = getToday();
 
     const [employees, attendanceRecords] = await Promise.all([
-      EmployeeProfile.find({ overallStatus: 'approved', isDeleted: false })
-        .populate('userId', 'firstName lastName email')
+      EmployeeProfile.find({ overallStatus: "approved", isDeleted: false })
+        .populate("userId", "firstName lastName email")
         .sort({ employeeId: 1, updatedAt: -1 })
         .lean(),
       Attendance.find({ date: today }).lean(),
     ]);
 
     const attendanceByEmployee = new Map(
-      attendanceRecords.map((record) => [String(record.employeeId), record])
+      attendanceRecords.map((record) => [String(record.employeeId), record]),
     );
 
     return {
@@ -112,7 +121,7 @@ class AttendanceService {
           position: profile.position,
           appliedPosition: profile.appliedPosition,
           attendance,
-          status: attendance?.status || 'not_marked',
+          status: attendance?.status || "not_marked",
           checkInTime: attendance?.checkInTime,
           checkOutTime: attendance?.checkOutTime,
         };
@@ -143,9 +152,11 @@ class AttendanceService {
     try {
       // Parse date if it's a string
       let attendanceDate = data.date;
-      if (typeof attendanceDate === 'string') {
+      if (typeof attendanceDate === "string") {
         // Handle DD-MM-YYYY format from Google Sheets
-        const dateMatch = attendanceDate.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+        const dateMatch = attendanceDate.match(
+          /(\d{1,2})[/-](\d{1,2})[/-](\d{4})/,
+        );
         if (dateMatch) {
           const [, day, month, year] = dateMatch;
           attendanceDate = new Date(year, parseInt(month) - 1, parseInt(day));
@@ -159,7 +170,7 @@ class AttendanceService {
       const profile = await EmployeeProfile.findOne({
         employeeId: data.employeeId,
         isDeleted: false,
-        overallStatus: 'approved',
+        overallStatus: "approved",
       });
 
       if (!profile) {
@@ -173,36 +184,42 @@ class AttendanceService {
         {
           employeeId: profile._id,
           date: attendanceDate,
-          shift1CheckIn: data.shift1CheckIn || '',
-          shift1CheckOut: data.shift1CheckOut || '',
+          shift1CheckIn: data.shift1CheckIn || "",
+          shift1CheckOut: data.shift1CheckOut || "",
           shift1DurationMinutes: data.shift1DurationMinutes,
-          shift1WorkedHours: data.shift1WorkedHours || '',
-          shift1Result: data.shift1Result || 'A',
-          shift2CheckIn: data.shift2CheckIn || '',
-          shift2CheckOut: data.shift2CheckOut || '',
+          shift1WorkedHours: data.shift1WorkedHours || "",
+          shift1Result: data.shift1Result || "A",
+          shift2CheckIn: data.shift2CheckIn || "",
+          shift2CheckOut: data.shift2CheckOut || "",
           shift2DurationMinutes: data.shift2DurationMinutes,
-          shift2WorkedHours: data.shift2WorkedHours || '',
-          shift2Result: data.shift2Result || 'A',
-          onDutyStatus: data.onDutyStatus || '',
-          status: data.overallStatus || 'Absent',
-          overallStatus: data.overallStatus || 'Absent',
-          source: 'google_sheets',
+          shift2WorkedHours: data.shift2WorkedHours || "",
+          shift2Result: data.shift2Result || "A",
+          onDutyStatus: data.onDutyStatus || "",
+          status: data.overallStatus || "Absent",
+          overallStatus: data.overallStatus || "Absent",
+          source: "google_sheets",
         },
-        { upsert: true, new: true }
+        { upsert: true, new: true },
       );
 
-      logger.debug(`[Attendance] Saved shift data for ${data.employeeId} on ${attendanceDate.toISOString()}`, {
-        shift1Result: data.shift1Result,
-        shift2Result: data.shift2Result,
-        overallStatus: data.overallStatus,
-      });
+      logger.debug(
+        `[Attendance] Saved shift data for ${data.employeeId} on ${attendanceDate.toISOString()}`,
+        {
+          shift1Result: data.shift1Result,
+          shift2Result: data.shift2Result,
+          overallStatus: data.overallStatus,
+        },
+      );
 
       return attendance;
     } catch (error) {
-      logger.error(`[Attendance] Error saving shift-based attendance: ${error.message}`, {
-        data,
-        error: error.toString(),
-      });
+      logger.error(
+        `[Attendance] Error saving shift-based attendance: ${error.message}`,
+        {
+          data,
+          error: error.toString(),
+        },
+      );
       throw error;
     }
   }
@@ -231,7 +248,9 @@ class AttendanceService {
       }
     }
 
-    logger.info(`[Attendance] Bulk save completed: ${saved} saved, ${failed} failed`);
+    logger.info(
+      `[Attendance] Bulk save completed: ${saved} saved, ${failed} failed`,
+    );
 
     return {
       saved,

@@ -1,15 +1,16 @@
-const fs = require('fs');
-const path = require('path');
-const { google } = require('googleapis');
+const fs = require("fs");
+const path = require("path");
+const { google } = require("googleapis");
 
-const AppError = require('../utils/AppError');
-const logger = require('../utils/logger');
+const AppError = require("../utils/AppError");
+const logger = require("../utils/logger");
 
-const SHEETS_READONLY_SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
-const DEFAULT_EMPLOYEE_MASTER_SHEET_NAME = 'Employee_Master';
-const DEFAULT_ATTENDANCE_LOG_SHEET_NAME = 'Attendance_Log';
-const DEFAULT_COLUMN_START = 'A';
-const DEFAULT_COLUMN_END = 'Z';
+const SHEETS_READONLY_SCOPE =
+  "https://www.googleapis.com/auth/spreadsheets.readonly";
+const DEFAULT_EMPLOYEE_MASTER_SHEET_NAME = "Employee_Master";
+const DEFAULT_ATTENDANCE_LOG_SHEET_NAME = "Attendance_Log";
+const DEFAULT_COLUMN_START = "A";
+const DEFAULT_COLUMN_END = "Z";
 const DEFAULT_CACHE_TTL_MS = 30 * 1000;
 const DEFAULT_MAX_RECORDS = 500;
 const DEFAULT_MASTER_MAX_RECORDS = 2000;
@@ -19,47 +20,108 @@ const PRESENT_THRESHOLD_MINUTES = 3 * 60 + 30;
 const cache = new Map();
 
 const headerAliases = {
-  employeeId: ['empid', 'employeeid', 'empcode', 'employee code', 'employee no', 'id'],
-  employeeName: ['employeename', 'employee name', 'name', 'fullname', 'full name', 'employee'],
-  dateOfJoining: ['dateofjoining', 'date of joining', 'doj', 'joiningdate', 'joining date'],
-  designation: ['designation', 'jobtitle', 'job title', 'title'],
-  department: ['department', 'dept'],
-  position: ['position', 'employmentposition', 'employment position', 'role'],
-  attendanceDate: ['attendancedate', 'attendance date', 'date', 'day'],
-  shift1CheckIn: ['shift1in', 'shift1checkin', 'shift 1 in', 'shift 1 check-in', 'shift 1 check in', 's1checkin', 's1 in'],
-  shift1CheckOut: ['shift1out', 'shift1checkout', 'shift 1 out', 'shift 1 check-out', 'shift 1 check out', 's1checkout', 's1 out'],
-  shift2CheckIn: ['shift2in', 'shift2checkin', 'shift 2 in', 'shift 2 check-in', 'shift 2 check in', 's2checkin', 's2 in'],
-  shift2CheckOut: ['shift2out', 'shift2checkout', 'shift 2 out', 'shift 2 check-out', 'shift 2 check out', 's2checkout', 's2 out'],
-  onDutyStatus: ['ondutystatus', 'on duty status', 'onduty', 'on duty', 'od', 'duty status'],
+  employeeId: [
+    "empid",
+    "employeeid",
+    "empcode",
+    "employee code",
+    "employee no",
+    "id",
+  ],
+  employeeName: [
+    "employeename",
+    "employee name",
+    "name",
+    "fullname",
+    "full name",
+    "employee",
+  ],
+  dateOfJoining: [
+    "dateofjoining",
+    "date of joining",
+    "doj",
+    "joiningdate",
+    "joining date",
+  ],
+  designation: ["designation", "jobtitle", "job title", "title"],
+  department: ["department", "dept"],
+  position: ["position", "employmentposition", "employment position", "role"],
+  attendanceDate: ["attendancedate", "attendance date", "date", "day"],
+  shift1CheckIn: [
+    "shift1in",
+    "shift1checkin",
+    "shift 1 in",
+    "shift 1 check-in",
+    "shift 1 check in",
+    "s1checkin",
+    "s1 in",
+  ],
+  shift1CheckOut: [
+    "shift1out",
+    "shift1checkout",
+    "shift 1 out",
+    "shift 1 check-out",
+    "shift 1 check out",
+    "s1checkout",
+    "s1 out",
+  ],
+  shift2CheckIn: [
+    "shift2in",
+    "shift2checkin",
+    "shift 2 in",
+    "shift 2 check-in",
+    "shift 2 check in",
+    "s2checkin",
+    "s2 in",
+  ],
+  shift2CheckOut: [
+    "shift2out",
+    "shift2checkout",
+    "shift 2 out",
+    "shift 2 check-out",
+    "shift 2 check out",
+    "s2checkout",
+    "s2 out",
+  ],
+  onDutyStatus: [
+    "ondutystatus",
+    "on duty status",
+    "onduty",
+    "on duty",
+    "od",
+    "duty status",
+  ],
 };
 
 const normalizeHeader = (value) =>
-  String(value || '')
+  String(value || "")
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
+    .replace(/[^a-z0-9]/g, "");
 
-const normalizeCell = (value) => String(value ?? '').trim();
+const normalizeCell = (value) => String(value ?? "").trim();
 
 const normalizedAliases = Object.fromEntries(
   Object.entries(headerAliases).map(([key, aliases]) => [
     key,
     aliases.map(normalizeHeader),
-  ])
+  ]),
 );
 
 const findColumnIndex = (headers, key) => {
   const aliases = normalizedAliases[key];
   const normalizedHeaders = headers.map(normalizeHeader);
-  const exactMatch = normalizedHeaders.findIndex((header) => aliases.includes(header));
+  const exactMatch = normalizedHeaders.findIndex((header) =>
+    aliases.includes(header),
+  );
   if (exactMatch >= 0) return exactMatch;
 
   return normalizedHeaders.findIndex((header) =>
-    aliases.some((alias) => alias.length > 3 && header.includes(alias))
+    aliases.some((alias) => alias.length > 3 && header.includes(alias)),
   );
 };
 
-const getCell = (row, index) => (index >= 0 ? normalizeCell(row[index]) : '');
+const getCell = (row, index) => (index >= 0 ? normalizeCell(row[index]) : "");
 
 const debugGoogleAttendance = (message, payload) => {
   logger.debug(`[GoogleAttendance] ${message}: ${JSON.stringify(payload)}`);
@@ -67,12 +129,15 @@ const debugGoogleAttendance = (message, payload) => {
 
 const isEmptyValue = (value) => {
   const normalized = normalizeCell(value).toLowerCase();
-  return !normalized || ['-', '--', 'na', 'n/a', 'null', 'undefined'].includes(normalized);
+  return (
+    !normalized ||
+    ["-", "--", "na", "n/a", "null", "undefined"].includes(normalized)
+  );
 };
 
 const normalizeDate = (value) => {
   const text = normalizeCell(value);
-  if (!text) return '';
+  if (!text) return "";
 
   const isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
@@ -81,7 +146,7 @@ const normalizeDate = (value) => {
   if (localMatch) {
     const [, day, month, rawYear] = localMatch;
     const year = rawYear.length === 2 ? `20${rawYear}` : rawYear;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
   }
 
   const parsed = new Date(text);
@@ -92,7 +157,7 @@ const normalizeDate = (value) => {
 
 const getComparableEmployeeId = (value) => {
   const text = normalizeCell(value).toLowerCase();
-  if (/^0+\d+$/.test(text)) return text.replace(/^0+/, '') || '0';
+  if (/^0+\d+$/.test(text)) return text.replace(/^0+/, "") || "0";
   return text;
 };
 
@@ -102,12 +167,15 @@ const getEmployeeMapKeys = (value) => {
   return [...new Set([exact, comparable].filter(Boolean))];
 };
 
-const quoteSheetName = (sheetName) => `'${String(sheetName).replace(/'/g, "''")}'`;
+const quoteSheetName = (sheetName) =>
+  `'${String(sheetName).replace(/'/g, "''")}'`;
 
 const boundOpenEndedRange = (range, recordLimit) =>
-  String(range).replace(/(^|!)([A-Z]+):([A-Z]+)$/i, (_match, prefix, start, end) => (
-    `${prefix}${start}1:${end}${recordLimit + 1}`
-  ));
+  String(range).replace(
+    /(^|!)([A-Z]+):([A-Z]+)$/i,
+    (_match, prefix, start, end) =>
+      `${prefix}${start}1:${end}${recordLimit + 1}`,
+  );
 
 const buildSheetRange = ({ sheetName, range, recordLimit }) => {
   if (range && !sheetName) {
@@ -134,33 +202,46 @@ const buildAttendanceLogRange = (sheetName, recordLimit) =>
       process.env.GOOGLE_ATTENDANCE_LOG_SHEET_NAME ||
       process.env.GOOGLE_ATTENDANCE_SHEET_NAME ||
       DEFAULT_ATTENDANCE_LOG_SHEET_NAME,
-    range: process.env.GOOGLE_ATTENDANCE_LOG_RANGE || process.env.GOOGLE_ATTENDANCE_RANGE,
+    range:
+      process.env.GOOGLE_ATTENDANCE_LOG_RANGE ||
+      process.env.GOOGLE_ATTENDANCE_RANGE,
     recordLimit,
   });
 
 const getCacheTtl = () => {
-  const configured = Number.parseInt(process.env.GOOGLE_ATTENDANCE_CACHE_TTL_MS || '', 10);
-  return Number.isFinite(configured) && configured >= 0 ? configured : DEFAULT_CACHE_TTL_MS;
+  const configured = Number.parseInt(
+    process.env.GOOGLE_ATTENDANCE_CACHE_TTL_MS || "",
+    10,
+  );
+  return Number.isFinite(configured) && configured >= 0
+    ? configured
+    : DEFAULT_CACHE_TTL_MS;
 };
 
 const getRecordLimit = (limit, fallback = DEFAULT_MAX_RECORDS) => {
-  const configured = Number.parseInt(limit || '', 10);
+  const configured = Number.parseInt(limit || "", 10);
   if (!Number.isFinite(configured) || configured <= 0) return fallback;
   return Math.min(configured, MAX_RECORD_CAP);
 };
 
 const getAttendanceRecordLimit = (limit) =>
-  getRecordLimit(limit || process.env.GOOGLE_ATTENDANCE_MAX_RECORDS, DEFAULT_MAX_RECORDS);
+  getRecordLimit(
+    limit || process.env.GOOGLE_ATTENDANCE_MAX_RECORDS,
+    DEFAULT_MAX_RECORDS,
+  );
 
 const getEmployeeMasterRecordLimit = () =>
-  getRecordLimit(process.env.GOOGLE_EMPLOYEE_MASTER_MAX_RECORDS, DEFAULT_MASTER_MAX_RECORDS);
+  getRecordLimit(
+    process.env.GOOGLE_EMPLOYEE_MASTER_MAX_RECORDS,
+    DEFAULT_MASTER_MAX_RECORDS,
+  );
 
 const getSpreadsheetId = () => {
   const spreadsheetId =
     process.env.GOOGLE_ATTENDANCE_SPREADSHEET_ID || process.env.GOOGLE_SHEET_ID;
 
   if (!spreadsheetId) {
-    throw new AppError('Google attendance spreadsheet is not configured.', 503);
+    throw new AppError("Google attendance spreadsheet is not configured.", 503);
   }
 
   return spreadsheetId;
@@ -170,14 +251,17 @@ const getCredentialsPath = () => {
   const configuredPath =
     process.env.GOOGLE_SHEETS_CREDENTIALS_PATH ||
     process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-    'credentials.json';
+    "credentials.json";
 
   const resolvedPath = path.isAbsolute(configuredPath)
     ? configuredPath
-    : path.resolve(__dirname, '..', configuredPath);
+    : path.resolve(__dirname, "..", configuredPath);
 
   if (!fs.existsSync(resolvedPath)) {
-    throw new AppError('Google Sheets credentials.json file was not found.', 503);
+    throw new AppError(
+      "Google Sheets credentials.json file was not found.",
+      503,
+    );
   }
 
   return resolvedPath;
@@ -193,14 +277,14 @@ const getCredentials = () => {
   try {
     return JSON.parse(inlineCredentials);
   } catch (error) {
-    throw new AppError('Google Sheets service account JSON is invalid.', 503);
+    throw new AppError("Google Sheets service account JSON is invalid.", 503);
   }
 };
 
 const createSheetsClient = () => {
   if (process.env.GOOGLE_SHEETS_API_KEY) {
     return google.sheets({
-      version: 'v4',
+      version: "v4",
       auth: process.env.GOOGLE_SHEETS_API_KEY,
     });
   }
@@ -211,7 +295,7 @@ const createSheetsClient = () => {
     scopes: [SHEETS_READONLY_SCOPE],
   });
 
-  return google.sheets({ version: 'v4', auth });
+  return google.sheets({ version: "v4", auth });
 };
 
 const getCachedResult = (cacheKey) => {
@@ -240,18 +324,22 @@ const parseTimeToMinutes = (value) => {
   const text = normalizeCell(value);
   if (isEmptyValue(text)) return null;
 
-  const twentyFourHourMatch = text.match(/^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
+  const twentyFourHourMatch = text.match(
+    /^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/,
+  );
   if (twentyFourHourMatch) {
     const [, rawHour, rawMinute] = twentyFourHourMatch;
     return Number.parseInt(rawHour, 10) * 60 + Number.parseInt(rawMinute, 10);
   }
 
-  const twelveHourMatch = text.match(/^(0?\d|1[0-2])(?::([0-5]\d))?\s*(am|pm)$/i);
+  const twelveHourMatch = text.match(
+    /^(0?\d|1[0-2])(?::([0-5]\d))?\s*(am|pm)$/i,
+  );
   if (twelveHourMatch) {
-    const [, rawHour, rawMinute = '0', period] = twelveHourMatch;
+    const [, rawHour, rawMinute = "0", period] = twelveHourMatch;
     let hour = Number.parseInt(rawHour, 10);
-    if (period.toLowerCase() === 'pm' && hour < 12) hour += 12;
-    if (period.toLowerCase() === 'am' && hour === 12) hour = 0;
+    if (period.toLowerCase() === "pm" && hour < 12) hour += 12;
+    if (period.toLowerCase() === "am" && hour === 12) hour = 0;
     return hour * 60 + Number.parseInt(rawMinute, 10);
   }
 
@@ -273,22 +361,22 @@ const calculateShiftDurationMinutes = ({ checkIn, checkOut }) => {
 };
 
 const formatDuration = (minutes) => {
-  if (minutes === null || minutes === undefined) return '';
+  if (minutes === null || minutes === undefined) return "";
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
-  return `${hours}h ${String(remainingMinutes).padStart(2, '0')}m`;
+  return `${hours}h ${String(remainingMinutes).padStart(2, "0")}m`;
 };
 
 const getOnDutyShiftScope = (value) => {
   const text = normalizeCell(value).toLowerCase();
   if (isEmptyValue(text)) return { shift1: false, shift2: false };
 
-  const normalized = text.replace(/[^a-z0-9]+/g, ' ').trim();
+  const normalized = text.replace(/[^a-z0-9]+/g, " ").trim();
   const isOnDuty =
-    ['od', 'onduty', 'yes', 'y', 'true', '1'].includes(normalized) ||
+    ["od", "onduty", "yes", "y", "true", "1"].includes(normalized) ||
     /\bod\b/.test(normalized) ||
-    normalized.includes('on duty') ||
-    normalized.includes('official duty');
+    normalized.includes("on duty") ||
+    normalized.includes("official duty");
 
   if (!isOnDuty) return { shift1: false, shift2: false };
 
@@ -306,8 +394,8 @@ const getShiftResult = (shift, isOnDutyShift) => {
   if (isOnDutyShift) {
     return {
       durationMinutes: null,
-      workedHours: '',
-      result: 'OD',
+      workedHours: "",
+      result: "OD",
     };
   }
 
@@ -316,31 +404,43 @@ const getShiftResult = (shift, isOnDutyShift) => {
   return {
     durationMinutes,
     workedHours: formatDuration(durationMinutes),
-    result: durationMinutes !== null && durationMinutes >= PRESENT_THRESHOLD_MINUTES ? 'P' : 'A',
+    result:
+      durationMinutes !== null && durationMinutes >= PRESENT_THRESHOLD_MINUTES
+        ? "P"
+        : "A",
   };
 };
 
 const getOverallStatus = (shift1Result, shift2Result) => {
   const pair = `${shift1Result}+${shift2Result}`;
 
-  if (pair === 'P+P') return 'Present';
-  if (pair === 'A+A') return 'Absent';
-  if (pair === 'OD+OD') return 'On Duty';
-  if (['P+OD', 'OD+P'].includes(pair)) return 'Present';
-  if (['P+A', 'A+P', 'OD+A', 'A+OD'].includes(pair)) return 'Half Day';
+  if (pair === "P+P") return "Present";
+  if (pair === "A+A") return "Absent";
+  if (pair === "OD+OD") return "On Duty";
+  if (["P+OD", "OD+P"].includes(pair)) return "Present";
+  if (["P+A", "A+P", "OD+A", "A+OD"].includes(pair)) return "Half Day";
 
-  return 'Absent';
+  return "Absent";
 };
 
-const calculateAttendanceStatus = ({ shift1CheckIn, shift1CheckOut, shift2CheckIn, shift2CheckOut, onDutyStatus }, employeeId = 'UNKNOWN') => {
+const calculateAttendanceStatus = (
+  {
+    shift1CheckIn,
+    shift1CheckOut,
+    shift2CheckIn,
+    shift2CheckOut,
+    onDutyStatus,
+  },
+  employeeId = "UNKNOWN",
+) => {
   const onDutyScope = getOnDutyShiftScope(onDutyStatus);
   const shift1 = getShiftResult(
     { checkIn: shift1CheckIn, checkOut: shift1CheckOut },
-    onDutyScope.shift1
+    onDutyScope.shift1,
   );
   const shift2 = getShiftResult(
     { checkIn: shift2CheckIn, checkOut: shift2CheckOut },
-    onDutyScope.shift2
+    onDutyScope.shift2,
   );
   const status = getOverallStatus(shift1.result, shift2.result);
 
@@ -375,31 +475,36 @@ const buildAnalytics = (records) => {
   const counts = records.reduce(
     (acc, record) => {
       acc.total += 1;
-      if (record.status === 'Present') acc.present += 1;
-      if (record.status === 'Absent') acc.absent += 1;
-      if (record.status === 'Half Day') acc.halfDay += 1;
-      if (record.status === 'On Duty') acc.onDuty += 1;
+      if (record.status === "Present") acc.present += 1;
+      if (record.status === "Absent") acc.absent += 1;
+      if (record.status === "Half Day") acc.halfDay += 1;
+      if (record.status === "On Duty") acc.onDuty += 1;
       return acc;
     },
-    { total: 0, present: 0, absent: 0, halfDay: 0, onDuty: 0 }
+    { total: 0, present: 0, absent: 0, halfDay: 0, onDuty: 0 },
   );
 
   return {
     ...counts,
     statusCounts: [
-      { status: 'Present', count: counts.present },
-      { status: 'Half Day', count: counts.halfDay },
-      { status: 'On Duty', count: counts.onDuty },
-      { status: 'Absent', count: counts.absent },
+      { status: "Present", count: counts.present },
+      { status: "Half Day", count: counts.halfDay },
+      { status: "On Duty", count: counts.onDuty },
+      { status: "Absent", count: counts.absent },
     ],
     checkInTrends: [],
   };
 };
 
 const getValuesByRange = (valueRanges, range, index) => {
-  const rangeSheetName = range.split('!')[0].replace(/^'|'$/g, '').replace(/''/g, "'");
+  const rangeSheetName = range
+    .split("!")[0]
+    .replace(/^'|'$/g, "")
+    .replace(/''/g, "'");
   const matched = valueRanges.find((valueRange) => {
-    const returnedSheetName = String(valueRange.range || '').split('!')[0].replace(/^'|'$/g, '');
+    const returnedSheetName = String(valueRange.range || "")
+      .split("!")[0]
+      .replace(/^'|'$/g, "");
     return returnedSheetName === rangeSheetName;
   });
 
@@ -409,24 +514,37 @@ const getValuesByRange = (valueRanges, range, index) => {
 const getRequiredIndex = (headers, key, sheetName, label) => {
   const index = findColumnIndex(headers, key);
   if (index < 0) {
-    throw new AppError(`${sheetName} sheet must include a ${label} column.`, 400);
+    throw new AppError(
+      `${sheetName} sheet must include a ${label} column.`,
+      400,
+    );
   }
   return index;
 };
 
 const parseEmployeeMaster = (values) => {
   if (!values.length) {
-    throw new AppError('Employee_Master sheet is empty or unreadable.', 400);
+    throw new AppError("Employee_Master sheet is empty or unreadable.", 400);
   }
 
   const [headers, ...dataRows] = values;
   const indexes = {
-    employeeId: getRequiredIndex(headers, 'employeeId', 'Employee_Master', 'Emp ID'),
-    employeeName: getRequiredIndex(headers, 'employeeName', 'Employee_Master', 'Employee Name'),
-    dateOfJoining: findColumnIndex(headers, 'dateOfJoining'),
-    designation: findColumnIndex(headers, 'designation'),
-    department: findColumnIndex(headers, 'department'),
-    position: findColumnIndex(headers, 'position'),
+    employeeId: getRequiredIndex(
+      headers,
+      "employeeId",
+      "Employee_Master",
+      "Emp ID",
+    ),
+    employeeName: getRequiredIndex(
+      headers,
+      "employeeName",
+      "Employee_Master",
+      "Employee Name",
+    ),
+    dateOfJoining: findColumnIndex(headers, "dateOfJoining"),
+    designation: findColumnIndex(headers, "designation"),
+    department: findColumnIndex(headers, "department"),
+    position: findColumnIndex(headers, "position"),
   };
 
   const employeeById = new Map();
@@ -444,7 +562,8 @@ const parseEmployeeMaster = (values) => {
     const employee = {
       employeeId,
       name,
-      dateOfJoining: normalizeDate(getCell(row, indexes.dateOfJoining)) || undefined,
+      dateOfJoining:
+        normalizeDate(getCell(row, indexes.dateOfJoining)) || undefined,
       designation: getCell(row, indexes.designation),
       department: getCell(row, indexes.department),
       position: getCell(row, indexes.position),
@@ -462,27 +581,40 @@ const parseEmployeeMaster = (values) => {
 
 const parseAttendanceLog = (values, requestedDate, recordLimit) => {
   if (!values.length) {
-    throw new AppError('Attendance_Log sheet is empty or unreadable.', 400);
+    throw new AppError("Attendance_Log sheet is empty or unreadable.", 400);
   }
 
   const [headers, ...dataRows] = values;
-  debugGoogleAttendance('Attendance_Log raw headers', headers);
-  debugGoogleAttendance('Attendance_Log raw rows', dataRows);
+  debugGoogleAttendance("Attendance_Log raw headers", headers);
+  debugGoogleAttendance("Attendance_Log raw rows", dataRows);
 
   const indexes = {
-    employeeId: getRequiredIndex(headers, 'employeeId', 'Attendance_Log', 'Emp ID'),
-    attendanceDate: getRequiredIndex(headers, 'attendanceDate', 'Attendance_Log', 'Attendance Date'),
-    shift1CheckIn: findColumnIndex(headers, 'shift1CheckIn'),
-    shift1CheckOut: findColumnIndex(headers, 'shift1CheckOut'),
-    shift2CheckIn: findColumnIndex(headers, 'shift2CheckIn'),
-    shift2CheckOut: findColumnIndex(headers, 'shift2CheckOut'),
-    onDutyStatus: findColumnIndex(headers, 'onDutyStatus'),
+    employeeId: getRequiredIndex(
+      headers,
+      "employeeId",
+      "Attendance_Log",
+      "Emp ID",
+    ),
+    attendanceDate: getRequiredIndex(
+      headers,
+      "attendanceDate",
+      "Attendance_Log",
+      "Attendance Date",
+    ),
+    shift1CheckIn: findColumnIndex(headers, "shift1CheckIn"),
+    shift1CheckOut: findColumnIndex(headers, "shift1CheckOut"),
+    shift2CheckIn: findColumnIndex(headers, "shift2CheckIn"),
+    shift2CheckOut: findColumnIndex(headers, "shift2CheckOut"),
+    onDutyStatus: findColumnIndex(headers, "onDutyStatus"),
   };
-  debugGoogleAttendance('Attendance_Log resolved column indexes', {
+  debugGoogleAttendance("Attendance_Log resolved column indexes", {
     headers,
     indexes,
     mappedColumns: Object.fromEntries(
-      Object.entries(indexes).map(([key, index]) => [key, index >= 0 ? headers[index] : null])
+      Object.entries(indexes).map(([key, index]) => [
+        key,
+        index >= 0 ? headers[index] : null,
+      ]),
     ),
   });
 
@@ -492,7 +624,7 @@ const parseAttendanceLog = (values, requestedDate, recordLimit) => {
   for (let rowIndex = 0; rowIndex < dataRows.length; rowIndex += 1) {
     const row = dataRows[rowIndex];
     scannedRows += 1;
-    debugGoogleAttendance('Attendance_Log raw row', {
+    debugGoogleAttendance("Attendance_Log raw row", {
       rowNumber: rowIndex + 2,
       row,
     });
@@ -507,17 +639,20 @@ const parseAttendanceLog = (values, requestedDate, recordLimit) => {
       onDutyStatus: getCell(row, indexes.onDutyStatus),
       rowNumber: rowIndex + 2,
     };
-    debugGoogleAttendance('Attendance_Log parsed attendance object', log);
+    debugGoogleAttendance("Attendance_Log parsed attendance object", log);
 
-    if ([
-      log.employeeId,
-      log.date,
-      log.shift1CheckIn,
-      log.shift1CheckOut,
-      log.shift2CheckIn,
-      log.shift2CheckOut,
-      log.onDutyStatus,
-    ].every(isEmptyValue)) continue;
+    if (
+      [
+        log.employeeId,
+        log.date,
+        log.shift1CheckIn,
+        log.shift1CheckOut,
+        log.shift2CheckIn,
+        log.shift2CheckOut,
+        log.onDutyStatus,
+      ].every(isEmptyValue)
+    )
+      continue;
     if (requestedDate && log.date !== requestedDate) continue;
 
     logs.push(log);
@@ -532,42 +667,42 @@ const parseAttendanceLog = (values, requestedDate, recordLimit) => {
 };
 
 const createMissingEmployeeError = (log) => ({
-  code: 'EMPLOYEE_MASTER_RECORD_MISSING',
-  message: `Employee_Master record not found for Emp ID ${log.employeeId || '(blank)'}.`,
+  code: "EMPLOYEE_MASTER_RECORD_MISSING",
+  message: `Employee_Master record not found for Emp ID ${log.employeeId || "(blank)"}.`,
   employeeId: log.employeeId,
   attendanceLogRowNumber: log.rowNumber,
 });
 
 const mapAttendanceLogToRecord = (log, employee) => {
   const calculated = calculateAttendanceStatus(log, log.employeeId);
-  debugGoogleAttendance('Shift1 Duration', {
+  debugGoogleAttendance("Shift1 Duration", {
     rowNumber: log.rowNumber,
     employeeId: log.employeeId,
     durationMinutes: calculated.shift1DurationMinutes,
     workedHours: calculated.shift1WorkedHours,
   });
-  debugGoogleAttendance('Shift1 Result', {
+  debugGoogleAttendance("Shift1 Result", {
     rowNumber: log.rowNumber,
     employeeId: log.employeeId,
     result: calculated.shift1Result,
   });
-  debugGoogleAttendance('Shift2 Duration', {
+  debugGoogleAttendance("Shift2 Duration", {
     rowNumber: log.rowNumber,
     employeeId: log.employeeId,
     durationMinutes: calculated.shift2DurationMinutes,
     workedHours: calculated.shift2WorkedHours,
   });
-  debugGoogleAttendance('Shift2 Result', {
+  debugGoogleAttendance("Shift2 Result", {
     rowNumber: log.rowNumber,
     employeeId: log.employeeId,
     result: calculated.shift2Result,
   });
-  debugGoogleAttendance('Overall Status', {
+  debugGoogleAttendance("Overall Status", {
     rowNumber: log.rowNumber,
     employeeId: log.employeeId,
     status: calculated.status,
   });
-  debugGoogleAttendance('Shift calculation result', {
+  debugGoogleAttendance("Shift calculation result", {
     rowNumber: log.rowNumber,
     employeeId: log.employeeId,
     shift1: {
@@ -590,19 +725,21 @@ const mapAttendanceLogToRecord = (log, employee) => {
 
   const record = {
     employeeId: employee?.employeeId || log.employeeId,
-    name: employee?.name || '',
-    department: employee?.department || '',
-    position: employee?.position || '',
-    designation: employee?.designation || '',
+    name: employee?.name || "",
+    department: employee?.department || "",
+    position: employee?.position || "",
+    designation: employee?.designation || "",
     dateOfJoining: employee?.dateOfJoining,
-    checkIn: isEmptyValue(log.shift1CheckIn) ? '' : log.shift1CheckIn,
-    checkOut: isEmptyValue(log.shift2CheckOut) ? log.shift1CheckOut : log.shift2CheckOut,
-    shift1CheckIn: isEmptyValue(log.shift1CheckIn) ? '' : log.shift1CheckIn,
-    shift1CheckOut: isEmptyValue(log.shift1CheckOut) ? '' : log.shift1CheckOut,
+    checkIn: isEmptyValue(log.shift1CheckIn) ? "" : log.shift1CheckIn,
+    checkOut: isEmptyValue(log.shift2CheckOut)
+      ? log.shift1CheckOut
+      : log.shift2CheckOut,
+    shift1CheckIn: isEmptyValue(log.shift1CheckIn) ? "" : log.shift1CheckIn,
+    shift1CheckOut: isEmptyValue(log.shift1CheckOut) ? "" : log.shift1CheckOut,
     shift1DurationMinutes: calculated.shift1DurationMinutes,
     shift1WorkedHours: calculated.shift1WorkedHours,
-    shift2CheckIn: isEmptyValue(log.shift2CheckIn) ? '' : log.shift2CheckIn,
-    shift2CheckOut: isEmptyValue(log.shift2CheckOut) ? '' : log.shift2CheckOut,
+    shift2CheckIn: isEmptyValue(log.shift2CheckIn) ? "" : log.shift2CheckIn,
+    shift2CheckOut: isEmptyValue(log.shift2CheckOut) ? "" : log.shift2CheckOut,
     shift2DurationMinutes: calculated.shift2DurationMinutes,
     shift2WorkedHours: calculated.shift2WorkedHours,
     shift1Result: calculated.shift1Result,
@@ -613,7 +750,7 @@ const mapAttendanceLogToRecord = (log, employee) => {
     rowNumber: log.rowNumber,
     mappingError: employee ? undefined : createMissingEmployeeError(log),
   };
-  debugGoogleAttendance('Final attendance status', {
+  debugGoogleAttendance("Final attendance status", {
     rowNumber: log.rowNumber,
     employeeId: record.employeeId,
     shift1Duration: record.shift1WorkedHours,
@@ -635,8 +772,9 @@ const mapAttendanceRecords = ({ logs, employeeById }) => {
     const employee = getEmployeeMapKeys(log.employeeId)
       .map((key) => employeeById.get(key))
       .find(Boolean);
-    const dateKey = log.date || 'no-date';
-    const employeeKey = getComparableEmployeeId(log.employeeId) || `row-${log.rowNumber}`;
+    const dateKey = log.date || "no-date";
+    const employeeKey =
+      getComparableEmployeeId(log.employeeId) || `row-${log.rowNumber}`;
     const dedupKey = `${employeeKey}|${dateKey}`;
 
     if (seen.has(dedupKey)) return;
@@ -662,8 +800,14 @@ class GoogleAttendanceService {
     const spreadsheetId = getSpreadsheetId();
     const attendanceLimit = getAttendanceRecordLimit(limit);
     const employeeLimit = getEmployeeMasterRecordLimit();
-    const employeeRange = buildEmployeeMasterRange(employeeSheetName, employeeLimit);
-    const attendanceRange = buildAttendanceLogRange(attendanceSheetName || sheetName, attendanceLimit);
+    const employeeRange = buildEmployeeMasterRange(
+      employeeSheetName,
+      employeeLimit,
+    );
+    const attendanceRange = buildAttendanceLogRange(
+      attendanceSheetName || sheetName,
+      attendanceLimit,
+    );
     const normalizedDate = normalizeDate(date);
     const cacheKey = JSON.stringify({
       spreadsheetId,
@@ -688,7 +832,11 @@ class GoogleAttendanceService {
 
       const valueRanges = response.data.valueRanges || [];
       const employeeValues = getValuesByRange(valueRanges, employeeRange, 0);
-      const attendanceValues = getValuesByRange(valueRanges, attendanceRange, 1);
+      const attendanceValues = getValuesByRange(
+        valueRanges,
+        attendanceRange,
+        1,
+      );
       const transformed = this.transformSheets({
         employeeValues,
         attendanceValues,
@@ -722,8 +870,8 @@ class GoogleAttendanceService {
       // Persist records to database asynchronously
       if (transformed.records.length > 0) {
         try {
-          const AttendanceService = require('./attendance.service');
-          const dataToSave = transformed.records.map(record => ({
+          const AttendanceService = require("./attendance.service");
+          const dataToSave = transformed.records.map((record) => ({
             employeeId: record.employeeId,
             date: record.date,
             shift1CheckIn: record.shift1CheckIn,
@@ -741,16 +889,24 @@ class GoogleAttendanceService {
           }));
 
           // Save asynchronously without blocking response
-          AttendanceService.bulkSaveShiftAttendance(dataToSave).catch(error => {
-            logger.error('[GoogleAttendance] Failed to persist records to database', {
-              error: error.message,
-              recordCount: dataToSave.length,
-            });
-          });
+          AttendanceService.bulkSaveShiftAttendance(dataToSave).catch(
+            (error) => {
+              logger.error(
+                "[GoogleAttendance] Failed to persist records to database",
+                {
+                  error: error.message,
+                  recordCount: dataToSave.length,
+                },
+              );
+            },
+          );
         } catch (error) {
-          logger.error('[GoogleAttendance] Error setting up database persistence', {
-            error: error.message,
-          });
+          logger.error(
+            "[GoogleAttendance] Error setting up database persistence",
+            {
+              error: error.message,
+            },
+          );
         }
       }
 
@@ -758,15 +914,26 @@ class GoogleAttendanceService {
       return result;
     } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError('Unable to fetch Google Sheets attendance data.', 502, [
-        { field: 'googleSheets', message: error.message },
-      ]);
+      throw new AppError(
+        "Unable to fetch Google Sheets attendance data.",
+        502,
+        [{ field: "googleSheets", message: error.message }],
+      );
     }
   }
 
-  transformSheets({ employeeValues, attendanceValues, requestedDate, recordLimit = DEFAULT_MAX_RECORDS }) {
+  transformSheets({
+    employeeValues,
+    attendanceValues,
+    requestedDate,
+    recordLimit = DEFAULT_MAX_RECORDS,
+  }) {
     const employeeMaster = parseEmployeeMaster(employeeValues);
-    const attendanceLog = parseAttendanceLog(attendanceValues, requestedDate, recordLimit);
+    const attendanceLog = parseAttendanceLog(
+      attendanceValues,
+      requestedDate,
+      recordLimit,
+    );
     const mapped = mapAttendanceRecords({
       logs: attendanceLog.logs,
       employeeById: employeeMaster.employeeById,

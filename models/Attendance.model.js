@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const attendanceSchema = new mongoose.Schema(
   {
     employeeId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'EmployeeProfile',
+      ref: "EmployeeProfile",
       required: true,
       index: true,
     },
@@ -18,11 +18,19 @@ const attendanceSchema = new mongoose.Schema(
     checkOutTime: { type: Date },
     status: {
       type: String,
-      enum: ['present', 'absent', 'completed', 'Present', 'Absent', 'Half Day', 'On Duty'],
+      enum: [
+        "present",
+        "absent",
+        "completed",
+        "Present",
+        "Absent",
+        "Half Day",
+        "On Duty",
+      ],
       required: true,
       index: true,
     },
-    markedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    markedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
     // Shift-based data (Google Sheets integration)
     shift1CheckIn: { type: String },
@@ -31,7 +39,7 @@ const attendanceSchema = new mongoose.Schema(
     shift1WorkedHours: { type: String },
     shift1Result: {
       type: String,
-      enum: ['P', 'A', 'OD', null],
+      enum: ["P", "A", "OD", null],
     },
 
     shift2CheckIn: { type: String },
@@ -40,7 +48,7 @@ const attendanceSchema = new mongoose.Schema(
     shift2WorkedHours: { type: String },
     shift2Result: {
       type: String,
-      enum: ['P', 'A', 'OD', null],
+      enum: ["P", "A", "OD", null],
     },
 
     // On Duty flag
@@ -49,19 +57,19 @@ const attendanceSchema = new mongoose.Schema(
     // Overall status (computed from shift results)
     overallStatus: {
       type: String,
-      enum: ['Present', 'Absent', 'Half Day', 'On Duty'],
+      enum: ["Present", "Absent", "Half Day", "On Duty"],
     },
 
     // Source tracking
     source: {
       type: String,
-      enum: ['manual', 'google_sheets', 'system'],
-      default: 'system',
+      enum: ["manual", "google_sheets", "system"],
+      default: "system",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 attendanceSchema.index({ employeeId: 1, date: 1 }, { unique: true });
 
-module.exports = mongoose.model('Attendance', attendanceSchema);
+module.exports = mongoose.model("Attendance", attendanceSchema);

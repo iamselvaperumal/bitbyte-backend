@@ -14,6 +14,7 @@ const DEFAULT_CACHE_TTL_MS = 30 * 1000;
 const DEFAULT_MAX_RECORDS = 500;
 const DEFAULT_MASTER_MAX_RECORDS = 2000;
 const MAX_RECORD_CAP = 5000;
+const PRESENT_THRESHOLD_MINUTES = 3 * 60 + 30;
 
 const cache = new Map();
 
@@ -235,18 +236,48 @@ const setCachedResult = (cacheKey, value) => {
   });
 };
 
-const isValidTimeValue = (value) => {
+const parseTimeToMinutes = (value) => {
   const text = normalizeCell(value);
-  if (isEmptyValue(text)) return false;
+  if (isEmptyValue(text)) return null;
 
-  if (/^(?:[01]?\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(text)) return true;
-  if (/^(?:0?\d|1[0-2])(?::[0-5]\d)?\s*(?:am|pm)$/i.test(text)) return true;
+  const twentyFourHourMatch = text.match(/^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
+  if (twentyFourHourMatch) {
+    const [, rawHour, rawMinute] = twentyFourHourMatch;
+    return Number.parseInt(rawHour, 10) * 60 + Number.parseInt(rawMinute, 10);
+  }
+
+  const twelveHourMatch = text.match(/^(0?\d|1[0-2])(?::([0-5]\d))?\s*(am|pm)$/i);
+  if (twelveHourMatch) {
+    const [, rawHour, rawMinute = '0', period] = twelveHourMatch;
+    let hour = Number.parseInt(rawHour, 10);
+    if (period.toLowerCase() === 'pm' && hour < 12) hour += 12;
+    if (period.toLowerCase() === 'am' && hour === 12) hour = 0;
+    return hour * 60 + Number.parseInt(rawMinute, 10);
+  }
 
   const parsed = new Date(text);
-  return !Number.isNaN(parsed.getTime()) && /\d{4}-\d{1,2}-\d{1,2}|T/.test(text);
+  if (!Number.isNaN(parsed.getTime()) && /\d{4}-\d{1,2}-\d{1,2}|T/.test(text)) {
+    return parsed.getHours() * 60 + parsed.getMinutes();
+  }
+
+  return null;
 };
 
-const hasShiftTime = ({ checkIn, checkOut }) => isValidTimeValue(checkIn) || isValidTimeValue(checkOut);
+const calculateShiftDurationMinutes = ({ checkIn, checkOut }) => {
+  const inMinutes = parseTimeToMinutes(checkIn);
+  const outMinutes = parseTimeToMinutes(checkOut);
+  if (inMinutes === null || outMinutes === null) return null;
+
+  const duration = outMinutes - inMinutes;
+  return duration >= 0 ? duration : duration + 24 * 60;
+};
+
+const formatDuration = (minutes) => {
+  if (minutes === null || minutes === undefined) return '';
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours}h ${String(remainingMinutes).padStart(2, '0')}m`;
+};
 
 const getOnDutyShiftScope = (value) => {
   const text = normalizeCell(value).toLowerCase();
@@ -272,82 +303,86 @@ const getOnDutyShiftScope = (value) => {
 };
 
 const getShiftResult = (shift, isOnDutyShift) => {
-  if (hasShiftTime(shift)) return 'P';
-  if (isOnDutyShift) return 'OD';
-  return 'A';
+  if (isOnDutyShift) {
+    return {
+      durationMinutes: null,
+      workedHours: '',
+      result: 'OD',
+    };
+  }
+
+  const durationMinutes = calculateShiftDurationMinutes(shift);
+
+  return {
+    durationMinutes,
+    workedHours: formatDuration(durationMinutes),
+    result: durationMinutes !== null && durationMinutes >= PRESENT_THRESHOLD_MINUTES ? 'P' : 'A',
+  };
 };
 
 const getOverallStatus = (shift1Result, shift2Result) => {
   const pair = `${shift1Result}+${shift2Result}`;
 
-  if (pair === 'P+P') return 'present';
-  if (pair === 'A+A') return 'absent';
-  if (pair === 'OD+OD') return 'on_duty';
-  if (['P+OD', 'OD+P'].includes(pair)) return 'present';
-  if (['P+A', 'A+P', 'OD+A', 'A+OD'].includes(pair)) return 'half_day';
+  if (pair === 'P+P') return 'Present';
+  if (pair === 'A+A') return 'Absent';
+  if (pair === 'OD+OD') return 'On Duty';
+  if (['P+OD', 'OD+P'].includes(pair)) return 'Present';
+  if (['P+A', 'A+P', 'OD+A', 'A+OD'].includes(pair)) return 'Half Day';
 
-  return 'not_marked';
+  return 'Absent';
 };
 
-const calculateAttendanceStatus = ({ shift1CheckIn, shift1CheckOut, shift2CheckIn, shift2CheckOut, onDutyStatus }) => {
+const calculateAttendanceStatus = ({ shift1CheckIn, shift1CheckOut, shift2CheckIn, shift2CheckOut, onDutyStatus }, employeeId = 'UNKNOWN') => {
   const onDutyScope = getOnDutyShiftScope(onDutyStatus);
-  const shift1Result = getShiftResult(
+  const shift1 = getShiftResult(
     { checkIn: shift1CheckIn, checkOut: shift1CheckOut },
     onDutyScope.shift1
   );
-  const shift2Result = getShiftResult(
+  const shift2 = getShiftResult(
     { checkIn: shift2CheckIn, checkOut: shift2CheckOut },
     onDutyScope.shift2
   );
+  const status = getOverallStatus(shift1.result, shift2.result);
+
+  // Debug logging for attendance calculations
+  logger.debug(`[Attendance Calculation] Employee: ${employeeId}`, {
+    shift1Duration: `${shift1.durationMinutes} minutes`,
+    shift1Result: shift1.result,
+    shift2Duration: `${shift2.durationMinutes} minutes`,
+    shift2Result: shift2.result,
+    overallStatus: status,
+    input: {
+      shift1CheckIn,
+      shift1CheckOut,
+      shift2CheckIn,
+      shift2CheckOut,
+      onDutyStatus,
+    },
+  });
 
   return {
-    shift1Result,
-    shift2Result,
-    status: getOverallStatus(shift1Result, shift2Result),
+    shift1DurationMinutes: shift1.durationMinutes,
+    shift1WorkedHours: shift1.workedHours,
+    shift1Result: shift1.result,
+    shift2DurationMinutes: shift2.durationMinutes,
+    shift2WorkedHours: shift2.workedHours,
+    shift2Result: shift2.result,
+    status,
   };
-};
-
-const buildCheckInBucket = (value) => {
-  const text = normalizeCell(value);
-  if (isEmptyValue(text)) return null;
-
-  const parsed = new Date(text);
-  if (!Number.isNaN(parsed.getTime()) && /\d{4}-\d{1,2}-\d{1,2}|T/.test(text)) {
-    return `${String(parsed.getHours()).padStart(2, '0')}:00`;
-  }
-
-  const match = text.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-  if (!match) return null;
-
-  let hour = Number.parseInt(match[1], 10);
-  const period = match[3]?.toLowerCase();
-  if (period === 'pm' && hour < 12) hour += 12;
-  if (period === 'am' && hour === 12) hour = 0;
-  if (hour < 0 || hour > 23) return null;
-
-  return `${String(hour).padStart(2, '0')}:00`;
 };
 
 const buildAnalytics = (records) => {
   const counts = records.reduce(
     (acc, record) => {
       acc.total += 1;
-      if (record.status === 'present') acc.present += 1;
-      if (record.status === 'absent') acc.absent += 1;
-      if (record.status === 'half_day') acc.halfDay += 1;
-      if (record.status === 'on_duty') acc.onDuty += 1;
-      if (record.status === 'not_marked') acc.notMarked += 1;
+      if (record.status === 'Present') acc.present += 1;
+      if (record.status === 'Absent') acc.absent += 1;
+      if (record.status === 'Half Day') acc.halfDay += 1;
+      if (record.status === 'On Duty') acc.onDuty += 1;
       return acc;
     },
-    { total: 0, present: 0, absent: 0, halfDay: 0, onDuty: 0, notMarked: 0 }
+    { total: 0, present: 0, absent: 0, halfDay: 0, onDuty: 0 }
   );
-
-  const checkInBuckets = new Map();
-  records.forEach((record) => {
-    const bucket = buildCheckInBucket(record.checkIn);
-    if (!bucket) return;
-    checkInBuckets.set(bucket, (checkInBuckets.get(bucket) || 0) + 1);
-  });
 
   return {
     ...counts,
@@ -356,11 +391,8 @@ const buildAnalytics = (records) => {
       { status: 'Half Day', count: counts.halfDay },
       { status: 'On Duty', count: counts.onDuty },
       { status: 'Absent', count: counts.absent },
-      { status: 'Not Marked', count: counts.notMarked },
     ],
-    checkInTrends: [...checkInBuckets.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([time, count]) => ({ time, count })),
+    checkInTrends: [],
   };
 };
 
@@ -507,23 +539,53 @@ const createMissingEmployeeError = (log) => ({
 });
 
 const mapAttendanceLogToRecord = (log, employee) => {
-  const calculated = calculateAttendanceStatus(log);
+  const calculated = calculateAttendanceStatus(log, log.employeeId);
+  debugGoogleAttendance('Shift1 Duration', {
+    rowNumber: log.rowNumber,
+    employeeId: log.employeeId,
+    durationMinutes: calculated.shift1DurationMinutes,
+    workedHours: calculated.shift1WorkedHours,
+  });
+  debugGoogleAttendance('Shift1 Result', {
+    rowNumber: log.rowNumber,
+    employeeId: log.employeeId,
+    result: calculated.shift1Result,
+  });
+  debugGoogleAttendance('Shift2 Duration', {
+    rowNumber: log.rowNumber,
+    employeeId: log.employeeId,
+    durationMinutes: calculated.shift2DurationMinutes,
+    workedHours: calculated.shift2WorkedHours,
+  });
+  debugGoogleAttendance('Shift2 Result', {
+    rowNumber: log.rowNumber,
+    employeeId: log.employeeId,
+    result: calculated.shift2Result,
+  });
+  debugGoogleAttendance('Overall Status', {
+    rowNumber: log.rowNumber,
+    employeeId: log.employeeId,
+    status: calculated.status,
+  });
   debugGoogleAttendance('Shift calculation result', {
     rowNumber: log.rowNumber,
     employeeId: log.employeeId,
     shift1: {
       checkIn: log.shift1CheckIn,
       checkOut: log.shift1CheckOut,
-      hasValidTime: hasShiftTime({ checkIn: log.shift1CheckIn, checkOut: log.shift1CheckOut }),
+      durationMinutes: calculated.shift1DurationMinutes,
+      workedHours: calculated.shift1WorkedHours,
       result: calculated.shift1Result,
     },
     shift2: {
       checkIn: log.shift2CheckIn,
       checkOut: log.shift2CheckOut,
-      hasValidTime: hasShiftTime({ checkIn: log.shift2CheckIn, checkOut: log.shift2CheckOut }),
+      durationMinutes: calculated.shift2DurationMinutes,
+      workedHours: calculated.shift2WorkedHours,
       result: calculated.shift2Result,
     },
     onDutyStatus: log.onDutyStatus,
+    overallStatus: calculated.status,
   });
 
   const record = {
@@ -537,8 +599,12 @@ const mapAttendanceLogToRecord = (log, employee) => {
     checkOut: isEmptyValue(log.shift2CheckOut) ? log.shift1CheckOut : log.shift2CheckOut,
     shift1CheckIn: isEmptyValue(log.shift1CheckIn) ? '' : log.shift1CheckIn,
     shift1CheckOut: isEmptyValue(log.shift1CheckOut) ? '' : log.shift1CheckOut,
+    shift1DurationMinutes: calculated.shift1DurationMinutes,
+    shift1WorkedHours: calculated.shift1WorkedHours,
     shift2CheckIn: isEmptyValue(log.shift2CheckIn) ? '' : log.shift2CheckIn,
     shift2CheckOut: isEmptyValue(log.shift2CheckOut) ? '' : log.shift2CheckOut,
+    shift2DurationMinutes: calculated.shift2DurationMinutes,
+    shift2WorkedHours: calculated.shift2WorkedHours,
     shift1Result: calculated.shift1Result,
     shift2Result: calculated.shift2Result,
     onDutyStatus: log.onDutyStatus,
@@ -550,7 +616,9 @@ const mapAttendanceLogToRecord = (log, employee) => {
   debugGoogleAttendance('Final attendance status', {
     rowNumber: log.rowNumber,
     employeeId: record.employeeId,
+    shift1Duration: record.shift1WorkedHours,
     shift1Result: record.shift1Result,
+    shift2Duration: record.shift2WorkedHours,
     shift2Result: record.shift2Result,
     status: record.status,
   });
@@ -650,6 +718,41 @@ class GoogleAttendanceService {
         },
         cached: false,
       };
+
+      // Persist records to database asynchronously
+      if (transformed.records.length > 0) {
+        try {
+          const AttendanceService = require('./attendance.service');
+          const dataToSave = transformed.records.map(record => ({
+            employeeId: record.employeeId,
+            date: record.date,
+            shift1CheckIn: record.shift1CheckIn,
+            shift1CheckOut: record.shift1CheckOut,
+            shift1DurationMinutes: record.shift1DurationMinutes,
+            shift1WorkedHours: record.shift1WorkedHours,
+            shift1Result: record.shift1Result,
+            shift2CheckIn: record.shift2CheckIn,
+            shift2CheckOut: record.shift2CheckOut,
+            shift2DurationMinutes: record.shift2DurationMinutes,
+            shift2WorkedHours: record.shift2WorkedHours,
+            shift2Result: record.shift2Result,
+            onDutyStatus: record.onDutyStatus,
+            overallStatus: record.status,
+          }));
+
+          // Save asynchronously without blocking response
+          AttendanceService.bulkSaveShiftAttendance(dataToSave).catch(error => {
+            logger.error('[GoogleAttendance] Failed to persist records to database', {
+              error: error.message,
+              recordCount: dataToSave.length,
+            });
+          });
+        } catch (error) {
+          logger.error('[GoogleAttendance] Error setting up database persistence', {
+            error: error.message,
+          });
+        }
+      }
 
       setCachedResult(cacheKey, result);
       return result;

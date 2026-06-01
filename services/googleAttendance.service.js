@@ -464,7 +464,8 @@ const calculateAttendanceStatus = (
     shift2WorkedHours: shift2.workedHours,
     shift2Result: shift2.result,
     overallStatus: status,
-    validationMethod: "Shift-based (checks if check-in and check-out values exist)",
+    validationMethod:
+      "Shift-based (checks if check-in and check-out values exist)",
   });
 
   return {
